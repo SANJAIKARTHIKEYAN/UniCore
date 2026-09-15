@@ -134,4 +134,82 @@ export const api = {
     request(`/faculty/courses/${courseId}/grades/calculate`, {
       method: 'POST',
     }),
+
+  // Admin Portal (Part 6)
+  getAdminDashboard: () => request('/admin/dashboard'),
+  getAdminStudents: (search) =>
+    request('/admin/students' + (search ? `?search=${encodeURIComponent(search)}` : '')),
+  getAdminStudentById: (id) => request(`/admin/students/${id}`),
+  createAdminStudent: (payload) =>
+    request('/admin/students', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  updateAdminStudent: (id, payload) =>
+    request(`/admin/students/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+  deleteAdminStudent: (id) =>
+    request(`/admin/students/${id}`, {
+      method: 'DELETE',
+    }),
+  getAdminFaculty: (search) =>
+    request('/admin/faculty' + (search ? `?search=${encodeURIComponent(search)}` : '')),
+  getAdminFacultyById: (id) => request(`/admin/faculty/${id}`),
+  createAdminFaculty: (payload) =>
+    request('/admin/faculty', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  updateAdminFaculty: (id, payload) =>
+    request(`/admin/faculty/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+  deleteAdminFaculty: (id) =>
+    request(`/admin/faculty/${id}`, {
+      method: 'DELETE',
+    }),
+  getAdminCourses: (department, semester) => {
+    const params = new URLSearchParams();
+    if (department) params.append('department', department);
+    if (semester) params.append('semester', semester);
+    const qs = params.toString();
+    return request('/admin/courses' + (qs ? `?${qs}` : ''));
+  },
+  getAdminCourseById: (id) => request(`/admin/courses/${id}`),
+  createAdminCourse: (payload) =>
+    request('/admin/courses', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  updateAdminCourse: (id, payload) =>
+    request(`/admin/courses/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+  deleteAdminCourse: (id) =>
+    request(`/admin/courses/${id}`, {
+      method: 'DELETE',
+    }),
+  assignFacultyToCourse: (courseId, facultyId) =>
+    request(`/admin/courses/${courseId}/assign-faculty`, {
+      method: 'POST',
+      body: JSON.stringify({ facultyId }),
+    }),
+  unassignFacultyFromCourse: (courseId, facultyId) =>
+    request(`/admin/courses/${courseId}/assign-faculty/${facultyId}`, {
+      method: 'DELETE',
+    }),
+  getAdminEnrollments: (params = {}) => {
+    const searchParams = new URLSearchParams();
+    if (params.courseId) searchParams.append('courseId', params.courseId);
+    if (params.studentId) searchParams.append('studentId', params.studentId);
+    if (params.semester) searchParams.append('semester', params.semester);
+    const qs = searchParams.toString();
+    return request('/admin/enrollments' + (qs ? `?${qs}` : ''));
+  },
+  getAdminAttendanceSummary: () => request('/admin/attendance/summary'),
+  getAdminAssessmentsSummary: () => request('/admin/assessments/summary'),
 };

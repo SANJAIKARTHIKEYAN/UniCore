@@ -4,6 +4,7 @@ import AuthPage from './pages/AuthPage';
 import DashboardPreview from './pages/DashboardPreview';
 import StudentLayout from './components/student/StudentLayout';
 import FacultyLayout from './components/faculty/FacultyLayout';
+import AdminLayout from './components/admin/AdminLayout';
 import { api } from './services/api';
 
 export default function App() {
@@ -48,7 +49,8 @@ export default function App() {
 
   const isStudent = currentUser?.role === 'STUDENT';
   const isFaculty = currentUser?.role === 'FACULTY';
-  const isWideLayout = isStudent || isFaculty;
+  const isAdmin = currentUser?.role === 'ADMIN';
+  const isWideLayout = isStudent || isFaculty || isAdmin;
 
   return (
     <div className={isWideLayout ? 'app-container-wide' : 'app-container'}>
@@ -61,6 +63,8 @@ export default function App() {
           <StudentLayout currentUser={currentUser} onLogout={handleLogout} />
         ) : isFaculty ? (
           <FacultyLayout currentUser={currentUser} onLogout={handleLogout} />
+        ) : isAdmin ? (
+          <AdminLayout currentUser={currentUser} onLogout={handleLogout} />
         ) : (
           <DashboardPreview currentUser={currentUser} onLogout={handleLogout} />
         )}

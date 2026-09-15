@@ -1379,4 +1379,444 @@ class UniCoreApplicationTests {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message", containsString("not assigned to instruct course")));
     }
+
+    private String getAdminToken() throws Exception {
+        LoginRequest adminLogin = new LoginRequest("admin@unicore.edu", "Admin@UniCore2026");
+        MvcResult res = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(adminLogin)))
+                .andExpect(status().isOk())
+                .andReturn();
+        return objectMapper.readValue(res.getResponse().getContentAsString(), AuthResponse.class).getToken();
+    }
+
+    @Test
+    @Order(44)
+    @DisplayName("44. Admin Authorization: ADMIN allowed, STUDENT and FACULTY rejected with 403")
+    void test44_AdminAuthorization() throws Exception {
+        String adminToken = getAdminToken();
+        mockMvc.perform(get("/api/admin/dashboard")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk());
+
+        LoginRequest studentLogin = new LoginRequest("bca.stu001@unicore.edu", "Password@123");
+        MvcResult stuRes = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(studentLogin)))
+                .andReturn();
+        String studentToken = objectMapper.readValue(stuRes.getResponse().getContentAsString(), AuthResponse.class).getToken();
+
+        mockMvc.perform(get("/api/admin/dashboard")
+                        .header("Authorization", "Bearer " + studentToken))
+                .andExpect(status().isForbidden());
+
+        LoginRequest facultyLogin = new LoginRequest("bca.fac001@unicore.edu", "FacultyPass@123");
+        MvcResult facRes = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(facultyLogin)))
+                .andReturn();
+        String facultyToken = objectMapper.readValue(facRes.getResponse().getContentAsString(), AuthResponse.class).getToken();
+
+        mockMvc.perform(get("/api/admin/dashboard")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @Order(45)
+    @DisplayName("45. Admin Dashboard: Aggregate statistics and system metrics")
+    void test45_AdminDashboard_Stats() throws Exception {
+        String adminToken = getAdminToken();
+
+        mockMvc.perform(get("/api/admin/dashboard")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalStudents", greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.totalFaculty", greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.totalCourses", greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.totalEnrollments", greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.activeUsers", greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.totalDepartments", greaterThanOrEqualTo(5)))
+                .andExpect(jsonPath("$.recentActivity", not(empty())));
+    }
+
+    @Test
+    @Order(46)
+    @DisplayName("46. Student Management: CRUD, Search, and Safe Deactivation")
+    void test46_StudentManagement_CRUD() throws Exception {
+        String adminToken = getAdminToken();
+
+        com.unicore.dto.request.CreateStudentAdminRequest createReq =
+                new com.unicore.dto.request.CreateStudentAdminRequest(
+                        "Admin Test Student",
+                        "adm.created.stu@unicore.edu",
+                        "TestStuPass@123",
+                        "BCA",
+                        "BCA-STU-777",
+                        2024,
+                        1
+                );
+
+        MvcResult createRes = mockMvc.perform(post("/api/admin/students")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createReq)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name", is("Admin Test Student")))
+                .andExpect(jsonPath("$.email", is("adm.created.stu@unicore.edu")))
+                .andExpect(jsonPath("$.studentId", is("BCA-STU-777")))
+                .andReturn();
+
+        com.unicore.dto.response.AdminStudentResponse created =
+                objectMapper.readValue(createRes.getResponse().getContentAsString(), com.unicore.dto.response.AdminStudentResponse.class);
+        Long studentUserId = created.getId();
+
+        mockMvc.perform(get("/api/admin/students?search=BCA-STU-777")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].email", is("adm.created.stu@unicore.edu")));
+
+        mockMvc.perform(get("/api/admin/students/" + studentUserId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(studentUserId.intValue())))
+                .andExpect(jsonPath("$.studentId", is("BCA-STU-777")));
+
+        com.unicore.dto.request.UpdateStudentAdminRequest updateReq =
+                new com.unicore.dto.request.UpdateStudentAdminRequest(
+                        "Admin Test Student Updated",
+                        "BCA",
+                        com.unicore.entity.UserStatus.ACTIVE,
+                        2,
+                        2024
+                );
+
+        mockMvc.perform(put("/api/admin/students/" + studentUserId)
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateReq)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name", is("Admin Test Student Updated")))
+                .andExpect(jsonPath("$.currentSemester", is(2)));
+
+        mockMvc.perform(delete("/api/admin/students/" + studentUserId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message", containsString("deactivated")));
+
+        mockMvc.perform(get("/api/admin/students/" + studentUserId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status", is("INACTIVE")));
+    }
+
+    @Test
+    @Order(47)
+    @DisplayName("47. Student Management: Reject duplicate email or student ID")
+    void test47_StudentManagement_DuplicateValidation() throws Exception {
+        String adminToken = getAdminToken();
+
+        com.unicore.dto.request.CreateStudentAdminRequest dupEmail =
+                new com.unicore.dto.request.CreateStudentAdminRequest(
+                        "Dup Student",
+                        "adm.created.stu@unicore.edu",
+                        "Pass@123",
+                        "BCA",
+                        "BCA-STU-888",
+                        2024,
+                        1
+                );
+
+        mockMvc.perform(post("/api/admin/students")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dupEmail)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", containsString("Email is already registered")));
+
+        com.unicore.dto.request.CreateStudentAdminRequest dupId =
+                new com.unicore.dto.request.CreateStudentAdminRequest(
+                        "Dup Student",
+                        "unique.student@unicore.edu",
+                        "Pass@123",
+                        "BCA",
+                        "BCA-STU-777",
+                        2024,
+                        1
+                );
+
+        mockMvc.perform(post("/api/admin/students")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dupId)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", containsString("Student ID is already registered")));
+    }
+
+    @Test
+    @Order(48)
+    @DisplayName("48. Faculty Management: CRUD, Search, and Safe Deactivation")
+    void test48_FacultyManagement_CRUD() throws Exception {
+        String adminToken = getAdminToken();
+
+        com.unicore.dto.request.CreateFacultyAdminRequest createReq =
+                new com.unicore.dto.request.CreateFacultyAdminRequest(
+                        "Admin Test Faculty",
+                        "adm.created.fac@unicore.edu",
+                        "TestFacPass@123",
+                        "BCA",
+                        "BCA-FAC-777"
+                );
+
+        MvcResult createRes = mockMvc.perform(post("/api/admin/faculty")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createReq)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name", is("Admin Test Faculty")))
+                .andExpect(jsonPath("$.email", is("adm.created.fac@unicore.edu")))
+                .andExpect(jsonPath("$.facultyId", is("BCA-FAC-777")))
+                .andReturn();
+
+        com.unicore.dto.response.AdminFacultyResponse created =
+                objectMapper.readValue(createRes.getResponse().getContentAsString(), com.unicore.dto.response.AdminFacultyResponse.class);
+        Long facultyUserId = created.getId();
+
+        mockMvc.perform(get("/api/admin/faculty?search=BCA-FAC-777")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].email", is("adm.created.fac@unicore.edu")));
+
+        mockMvc.perform(get("/api/admin/faculty/" + facultyUserId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(facultyUserId.intValue())))
+                .andExpect(jsonPath("$.facultyId", is("BCA-FAC-777")));
+
+        com.unicore.dto.request.UpdateFacultyAdminRequest updateReq =
+                new com.unicore.dto.request.UpdateFacultyAdminRequest(
+                        "Admin Test Faculty Updated",
+                        "BCA",
+                        com.unicore.entity.UserStatus.ACTIVE
+                );
+
+        mockMvc.perform(put("/api/admin/faculty/" + facultyUserId)
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateReq)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name", is("Admin Test Faculty Updated")));
+
+        mockMvc.perform(delete("/api/admin/faculty/" + facultyUserId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message", containsString("deactivated")));
+
+        mockMvc.perform(get("/api/admin/faculty/" + facultyUserId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status", is("INACTIVE")));
+    }
+
+    @Test
+    @Order(49)
+    @DisplayName("49. Faculty Management: Reject duplicate email or faculty ID")
+    void test49_FacultyManagement_DuplicateValidation() throws Exception {
+        String adminToken = getAdminToken();
+
+        com.unicore.dto.request.CreateFacultyAdminRequest dupEmail =
+                new com.unicore.dto.request.CreateFacultyAdminRequest(
+                        "Dup Faculty",
+                        "adm.created.fac@unicore.edu",
+                        "Pass@123",
+                        "BCA",
+                        "BCA-FAC-888"
+                );
+
+        mockMvc.perform(post("/api/admin/faculty")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dupEmail)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", containsString("Email is already registered")));
+
+        com.unicore.dto.request.CreateFacultyAdminRequest dupId =
+                new com.unicore.dto.request.CreateFacultyAdminRequest(
+                        "Dup Faculty",
+                        "unique.faculty@unicore.edu",
+                        "Pass@123",
+                        "BCA",
+                        "BCA-FAC-777"
+                );
+
+        mockMvc.perform(post("/api/admin/faculty")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dupId)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", containsString("Faculty ID is already registered")));
+    }
+
+    @Test
+    @Order(50)
+    @DisplayName("50. Course Management: CRUD and Safe Deletion Protection")
+    void test50_CourseManagement_CRUD_And_Protection() throws Exception {
+        String adminToken = getAdminToken();
+
+        com.unicore.dto.request.CreateCourseAdminRequest createReq =
+                new com.unicore.dto.request.CreateCourseAdminRequest(
+                        "CS999",
+                        "Special Topics in Computing",
+                        "BCA",
+                        3,
+                        4,
+                        null
+                );
+
+        MvcResult createRes = mockMvc.perform(post("/api/admin/courses")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createReq)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.courseCode", is("CS999")))
+                .andExpect(jsonPath("$.courseName", is("Special Topics in Computing")))
+                .andReturn();
+
+        com.unicore.dto.response.AdminCourseResponse created =
+                objectMapper.readValue(createRes.getResponse().getContentAsString(), com.unicore.dto.response.AdminCourseResponse.class);
+        Long courseId = created.getId();
+
+        mockMvc.perform(get("/api/admin/courses/" + courseId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.courseCode", is("CS999")));
+
+        com.unicore.dto.request.UpdateCourseAdminRequest updateReq =
+                new com.unicore.dto.request.UpdateCourseAdminRequest(
+                        "Advanced Topics in Computing",
+                        "BCA",
+                        3,
+                        4,
+                        null
+                );
+
+        mockMvc.perform(put("/api/admin/courses/" + courseId)
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateReq)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.courseName", is("Advanced Topics in Computing")));
+
+        com.unicore.entity.Course bca101 = courseRepository.findByCourseCode("BCA101").orElseThrow();
+        mockMvc.perform(delete("/api/admin/courses/" + bca101.getId())
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", containsString("enrolled students")));
+
+        mockMvc.perform(delete("/api/admin/courses/" + courseId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message", containsString("successfully deleted")));
+    }
+
+    @Test
+    @Order(51)
+    @DisplayName("51. Course Management: Reject duplicate course code")
+    void test51_CourseManagement_DuplicateCourseCode() throws Exception {
+        String adminToken = getAdminToken();
+
+        com.unicore.dto.request.CreateCourseAdminRequest dupReq =
+                new com.unicore.dto.request.CreateCourseAdminRequest(
+                        "BCA101",
+                        "Duplicate Course",
+                        "BCA",
+                        1,
+                        4,
+                        null
+                );
+
+        mockMvc.perform(post("/api/admin/courses")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dupReq)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", containsString("Course code already exists")));
+    }
+
+    @Test
+    @Order(52)
+    @DisplayName("52. Faculty-Course Assignment and Unassignment Workflow")
+    void test52_FacultyCourseAssignment() throws Exception {
+        String adminToken = getAdminToken();
+
+        com.unicore.dto.request.CreateCourseAdminRequest courseReq =
+                new com.unicore.dto.request.CreateCourseAdminRequest(
+                        "CS888",
+                        "Cloud Architecture",
+                        "BCA",
+                        2,
+                        3,
+                        null
+                );
+
+        MvcResult cRes = mockMvc.perform(post("/api/admin/courses")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(courseReq)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        com.unicore.dto.response.AdminCourseResponse createdCourse =
+                objectMapper.readValue(cRes.getResponse().getContentAsString(), com.unicore.dto.response.AdminCourseResponse.class);
+        Long courseId = createdCourse.getId();
+
+        User faculty = userRepository.findByEmail("bca.fac001@unicore.edu").orElseThrow();
+
+        com.unicore.dto.request.AssignFacultyRequest assignReq =
+                new com.unicore.dto.request.AssignFacultyRequest(faculty.getId());
+
+        mockMvc.perform(post("/api/admin/courses/" + courseId + "/assign-faculty")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(assignReq)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.instructorId", is(faculty.getId().intValue())))
+                .andExpect(jsonPath("$.instructorName", is(faculty.getName())));
+
+        mockMvc.perform(delete("/api/admin/courses/" + courseId + "/assign-faculty/" + faculty.getId())
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.instructorId", nullValue()))
+                .andExpect(jsonPath("$.instructorName", is("Unassigned")));
+
+        mockMvc.perform(delete("/api/admin/courses/" + courseId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @Order(53)
+    @DisplayName("53. Enrollment Overview and Attendance/Assessment Summaries")
+    void test53_EnrollmentOverview_And_Summaries() throws Exception {
+        String adminToken = getAdminToken();
+
+        mockMvc.perform(get("/api/admin/enrollments")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", not(empty())))
+                .andExpect(jsonPath("$[0].studentName", notNullValue()))
+                .andExpect(jsonPath("$[0].courseCode", notNullValue()));
+
+        mockMvc.perform(get("/api/admin/attendance/summary")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalRecords", greaterThanOrEqualTo(0)))
+                .andExpect(jsonPath("$.overallPercentage", greaterThanOrEqualTo(0.0)));
+
+        mockMvc.perform(get("/api/admin/assessments/summary")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalAssessments", greaterThanOrEqualTo(0)))
+                .andExpect(jsonPath("$.typeCounts", notNullValue()));
+    }
 }
