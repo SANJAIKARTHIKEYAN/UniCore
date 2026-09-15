@@ -1,8 +1,10 @@
+com\unicore\dto\response\AdvisorOverviewDTO.class
 com\unicore\entity\DocumentStatus.class
 com\unicore\controller\StudentController.class
 com\unicore\repository\DepartmentRepository.class
 com\unicore\entity\AssessmentMark.class
 com\unicore\repository\AttendanceRecordRepository.class
+com\unicore\controller\AdvisorController.class
 com\unicore\dto\response\FeeRecordResponse.class
 com\unicore\entity\ApprovedStudent.class
 com\unicore\dto\response\FacultyCourseResponse.class
@@ -16,6 +18,7 @@ com\unicore\exception\AppException.class
 com\unicore\repository\ApprovedFacultyRepository.class
 com\unicore\dto\request\UpdateFacultyAdminRequest.class
 com\unicore\entity\NotificationType.class
+com\unicore\service\MlPredictionService$1.class
 com\unicore\repository\CourseRepository.class
 com\unicore\dto\request\CreateStudentAdminRequest.class
 com\unicore\UniCoreApplication.class
@@ -26,12 +29,14 @@ com\unicore\dto\response\AssessmentMarkResponse.class
 com\unicore\controller\AuthController.class
 com\unicore\dto\response\CourseSummaryResponse$StudentGradeSummary.class
 com\unicore\service\AdminService.class
+com\unicore\service\MlPredictionService.class
 com\unicore\dto\response\AdminFacultyResponse.class
 com\unicore\entity\ApprovedFaculty.class
 com\unicore\dto\response\FacultyCourseRosterResponse.class
 com\unicore\dto\response\RiskStatusResponse.class
 com\unicore\dto\response\AttendanceEntryResponse.class
 com\unicore\controller\AdminController.class
+com\unicore\controller\MlController.class
 com\unicore\dto\response\EnrolledStudentResponse.class
 com\unicore\repository\FeeRecordRepository.class
 com\unicore\dto\request\MarkEntryRequest.class
@@ -39,6 +44,7 @@ com\unicore\dto\response\AttendanceSummaryResponse.class
 com\unicore\dto\response\CourseAcademicDetail.class
 com\unicore\dto\response\AdminDashboardResponse.class
 com\unicore\controller\FacultyController.class
+com\unicore\dto\request\AdvisorQuestionRequest.class
 com\unicore\service\StudentService.class
 com\unicore\security\UserPrincipal.class
 com\unicore\dto\request\CreateCourseAdminRequest.class
@@ -58,6 +64,7 @@ com\unicore\service\DepartmentService.class
 com\unicore\dto\response\AuthResponse.class
 com\unicore\entity\FeeStatus.class
 com\unicore\dto\response\UserResponse.class
+com\unicore\entity\StudentRiskPrediction.class
 com\unicore\dto\response\DocumentResponse.class
 com\unicore\config\SecurityConfig.class
 com\unicore\dto\response\CourseSummaryResponse$AssessmentScore.class
@@ -66,6 +73,7 @@ com\unicore\repository\FacultyProfileRepository.class
 com\unicore\dto\request\FacultyRegisterRequest.class
 com\unicore\entity\StudentProfile.class
 com\unicore\repository\UserRepository.class
+com\unicore\service\AdvisorService.class
 com\unicore\dto\response\FacultyProfileResponse.class
 com\unicore\repository\DocumentRepository.class
 com\unicore\dto\response\NotificationResponse.class
@@ -74,6 +82,7 @@ com\unicore\entity\User.class
 com\unicore\dto\response\AssessmentResponse.class
 com\unicore\entity\FacultyProfile.class
 com\unicore\entity\AttendanceRecord.class
+com\unicore\dto\response\AdminAdvisorOverviewDTO.class
 com\unicore\dto\response\CourseSummaryResponse.class
 com\unicore\dto\response\MessageResponse.class
 com\unicore\security\JwtTokenProvider.class
@@ -83,17 +92,21 @@ com\unicore\repository\EnrollmentRepository.class
 com\unicore\dto\request\AssignFacultyRequest.class
 com\unicore\exception\BadRequestException.class
 com\unicore\dto\response\AdminAttendanceSummaryResponse.class
+com\unicore\dto\response\AdvisorQuestionResponse.class
 com\unicore\exception\UnauthorizedException.class
 com\unicore\service\DataSeederService.class
 com\unicore\controller\DepartmentController.class
+com\unicore\repository\StudentRiskPredictionRepository.class
 com\unicore\dto\response\AdminAttendanceSummaryResponse$DepartmentAttendanceSummary.class
 com\unicore\dto\request\UpdateStudentAdminRequest.class
 com\unicore\exception\ErrorResponse.class
 com\unicore\entity\Role.class
 com\unicore\entity\Enrollment.class
 com\unicore\dto\request\AttendanceSubmitRequest$AttendanceEntry.class
+com\unicore\dto\response\AdvisorRecommendationDTO.class
 com\unicore\dto\response\AcademicPerformanceResponse.class
 com\unicore\exception\ResourceNotFoundException.class
+com\unicore\dto\response\StudentRiskPredictionResponse.class
 com\unicore\dto\response\AdminAssessmentSummaryResponse.class
 com\unicore\entity\UserStatus.class
 com\unicore\service\StudentDataInitializerService.class
@@ -101,6 +114,7 @@ com\unicore\dto\response\DashboardResponse.class
 com\unicore\entity\Notification.class
 com\unicore\exception\ForbiddenException.class
 com\unicore\repository\ApprovedStudentRepository.class
+com\unicore\dto\response\RiskOverviewResponse.class
 com\unicore\dto\response\StudentProfileResponse.class
 com\unicore\entity\Assessment.class
 com\unicore\dto\response\SemesterResultResponse.class
