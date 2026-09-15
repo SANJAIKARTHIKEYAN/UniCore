@@ -6,8 +6,8 @@ This document maintains the official, up-to-date state tracking of the UniCore p
 
 ## 📅 Current Status Summary
 
-- **Last Updated**: 2026-09-08
-- **Current Milestone**: Step 5.2 Complete (Faculty Portal Shell & Dashboard UI)
+- **Last Updated**: 2026-09-15
+- **Current Milestone**: Step 5.3 Complete (Faculty Attendance Marking)
 - **Active Workspace**: `UniCore/`
 
 ---
@@ -221,6 +221,26 @@ Tests 1–21 in [`UniCoreApplicationTests.java`](file:///c:/Users/SANJAI%20KARTH
 
 ---
 
-## 🧭 Recommended Next Step (Part 5.3)
+## 🛠️ Step 5.3 Implementation Record: Faculty Attendance Marking
 
-- **Part 5.3: Faculty Attendance Marking**: Implement the daily operational workflow for faculty to mark attendance — backend API endpoint for recording/updating attendance for a course section on a given date, interactive frontend attendance grid for faculty, and automated verification that marked attendance reflects in the student portal.
+### 1. Verification of Step 5.3 Requirements
+| # | Requirement | Status | Verification Detail |
+| :--- | :--- | :--- | :--- |
+| 1 | Attendance retrieval endpoint | ✅ Complete | `GET /api/faculty/courses/{id}/attendance?date=YYYY-MM-DD` returns enrolled students with current status (or null if unmarked). |
+| 2 | Attendance submission & update endpoint | ✅ Complete | `PUT /api/faculty/courses/{id}/attendance` upserts attendance records for enrolled students on the specified date. |
+| 3 | Faculty ownership & authentication | ✅ Complete | Strict check: faculty can only view and mark attendance for assigned courses; cross-faculty requests return `403 Forbidden`. |
+| 4 | Enrollment validation & duplicate prevention | ✅ Complete | Validates student enrollment (`400 Bad Request` if unenrolled); database unique constraint `(student_id, course_id, date)` ensures upsert with zero duplicates. |
+| 5 | Interactive Frontend Attendance Page | ✅ Complete | `FacultyAttendance.jsx` created with course dropdown, date picker, status chips, quick actions ("All Present", "All Absent"), and segmented toggles. |
+| 6 | Navigation & Layout Integration | ✅ Complete | Integrated into `FacultySidebar.jsx` and `FacultyLayout.jsx` with active tab routing; quick links added from `FacultyCourses.jsx` and `FacultyDashboard.jsx`. |
+| 7 | Aesthetics & Micro-interactions | ✅ Complete | Styled with glassmorphism, `--accent-faculty`, emerald for Present, crimson for Absent, amber for Late, responsive layout (`index.css`). |
+| 8 | Automated Backend Tests (Tests 36–38) | ✅ Complete | Tests 36 (Submit & Retrieve), 37 (Cross-Faculty & 401 Rejection), 38 (Upsert & Validation). Suite: **38/38 passing (0 failures, 0 errors)**. |
+| 9 | Automated Frontend Tests | ✅ Complete | 8/8 Vitest tests passing in `FacultyPortal.test.jsx`. |
+| 10 | Production Build Verification | ✅ Complete | `npm run build` succeeds (49 modules transformed, exit code 0). |
+| 11 | Absolute ML Safeguards | ✅ Complete | Zero mutations inside `ML/` directory, datasets, or models. |
+
+---
+
+## 🧭 Recommended Next Step (Part 5.4)
+
+- **Part 5.4: Assessment & Grading Engine**: Implement faculty exam/grade management — defining assessment structures (midterm, quiz, assignment, final exam), entering and submitting student grades, computing grade points and SGPA, and locking grades once published.
+
