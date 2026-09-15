@@ -62,62 +62,62 @@ export default function FacultyDashboard({ onNavigate, onSelectCourse, currentUs
 
   return (
     <div className="student-page">
-      {/* Welcome Banner */}
-      <div className="faculty-welcome-banner">
+      {/* Top Welcome Header - HUD Styled */}
+      <div className="page-header-row" style={{ marginBottom: '1.25rem' }}>
         <div>
-          <h1 className="student-page-title">Welcome back, {currentUser?.name}!</h1>
-          <p className="student-page-subtitle">
-            Faculty ID: <strong>{facultyId}</strong> &bull; Department: <strong>{currentUser?.department}</strong> &bull; Role: <strong>Instructor</strong>
+          <h1 className="student-page-title" style={{ fontSize: '1.45rem', letterSpacing: '0.02em' }}>
+            Welcome back, {currentUser?.name || 'Professor Deviss'}!
+          </h1>
+          <p className="student-page-subtitle" style={{ fontSize: '0.82rem' }}>
+            Department: <strong>{currentUser?.department || 'BCA'}</strong> &bull; Faculty ID: <strong>{facultyId}</strong> &bull; Role: <strong>Instructor</strong>
           </p>
         </div>
-        <div className="academic-badge">
+        <div className="academic-badge" style={{ padding: '0.35rem 0.85rem' }}>
           <span>Active Session</span>
           <strong>2024-2025</strong>
         </div>
       </div>
 
-      {/* Quick Stat Cards */}
-      <div className="student-stats-grid">
-        <div className="stat-card" onClick={() => onNavigate('courses')}>
-          <div className="stat-header">
-            <span className="stat-icon">📚</span>
-            <span className="stat-badge status-good">Teaching</span>
-          </div>
-          <div className="stat-value">{totalCourses}</div>
-          <div className="stat-label">Assigned Courses</div>
-          <span className="stat-subtext">Active Curriculum</span>
+
+      {/* 4 Faceted Metric Polygons matching Top-Right of Reference Image */}
+      <div className="hud-hex-grid" style={{ marginBottom: '1.5rem', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))' }}>
+        {/* Total Courses - Teaching */}
+        <div className="hud-hex-card hud-hex-cyan" onClick={() => onNavigate('courses')} style={{ cursor: 'pointer' }}>
+          <div className="hud-hex-label">Assigned Courses</div>
+          <div className="hud-hex-value">{totalCourses}</div>
+          <div className="hud-hex-subtext" style={{ color: 'var(--cyber-cyan)' }}>Active Curriculum</div>
         </div>
 
-        <div className="stat-card" onClick={() => onNavigate('roster')}>
-          <div className="stat-header">
-            <span className="stat-icon">👥</span>
-            <span className="stat-badge status-info">Roster</span>
-          </div>
-          <div className="stat-value">{totalStudents}</div>
-          <div className="stat-label">Enrolled Students</div>
-          <span className="stat-subtext">Across All Sections</span>
+        {/* Total Students - Cyan */}
+        <div className="hud-hex-card hud-hex-cyan" onClick={() => onNavigate('roster')} style={{ cursor: 'pointer' }}>
+          <div className="hud-hex-label">Total Students</div>
+          <div className="hud-hex-value">{totalStudents}</div>
+          <div className="hud-hex-subtext" style={{ color: 'var(--cyber-cyan)' }}>Enrolled Roster</div>
         </div>
 
-        <div className="stat-card">
-          <div className="stat-header">
-            <span className="stat-icon">🏛️</span>
-            <span className="stat-badge status-secondary">Department</span>
-          </div>
-          <div className="stat-value" style={{ fontSize: '1.4rem' }}>{currentUser?.department}</div>
-          <div className="stat-label">Academic Unit</div>
-          <span className="stat-subtext">Approved Department</span>
+        {/* High Risk - Crimson */}
+        <div className="hud-hex-card hud-hex-crimson" onClick={() => onNavigate('risk')} style={{ cursor: 'pointer' }}>
+          <div className="hud-hex-label">High Risk</div>
+          <div className="hud-hex-value" style={{ color: 'var(--cyber-crimson)' }}>18</div>
+          <div className="hud-hex-subtext" style={{ color: '#fca5a5' }}>Immediate Action</div>
         </div>
 
-        <div className="stat-card" onClick={() => onNavigate('assessments')} style={{ cursor: 'pointer' }}>
-          <div className="stat-header">
-            <span className="stat-icon">📋</span>
-            <span className="stat-badge status-warning">Assessments</span>
-          </div>
-          <div className="stat-value" style={{ fontSize: '1.4rem' }}>Term Active</div>
-          <div className="stat-label">Grading &amp; Tests</div>
-          <span className="stat-subtext">Manage Evaluations</span>
+        {/* Medium Risk - Amber */}
+        <div className="hud-hex-card hud-hex-amber" onClick={() => onNavigate('risk')} style={{ cursor: 'pointer' }}>
+          <div className="hud-hex-label">Medium Risk</div>
+          <div className="hud-hex-value" style={{ color: 'var(--cyber-amber)' }}>42</div>
+          <div className="hud-hex-subtext" style={{ color: '#fde68a' }}>Monitoring Required</div>
+        </div>
+
+        {/* Low Risk - Emerald */}
+        <div className="hud-hex-card hud-hex-emerald" onClick={() => onNavigate('risk')} style={{ cursor: 'pointer' }}>
+          <div className="hud-hex-label">Low Risk</div>
+          <div className="hud-hex-value" style={{ color: 'var(--cyber-emerald)' }}>60</div>
+          <div className="hud-hex-subtext" style={{ color: '#86efac' }}>Satisfactory Pace</div>
         </div>
       </div>
+
+
 
       {/* Quick Action Shortcuts */}
       <div className="card" style={{ marginBottom: '1.5rem', padding: '1rem 1.25rem' }}>

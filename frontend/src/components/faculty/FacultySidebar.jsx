@@ -15,6 +15,11 @@ export default function FacultySidebar({ activeTab, onTabChange, currentUser }) 
 
   return (
     <aside className="faculty-sidebar">
+      <div className="cyber-sidebar-brand">
+        <span className="cyber-menu-icon">☰</span>
+        <span className="cyber-brand-text">UNICORE</span>
+      </div>
+
       <div className="faculty-user-card">
         <div className="faculty-avatar">
           {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'F'}

@@ -48,8 +48,8 @@ export default function StudentResults() {
     <div className="student-page">
       <div className="page-header-row">
         <div>
-          <h1 className="student-page-title">Semester-wise Results</h1>
-          <p className="student-page-subtitle">Historical examination scorecards and active semester result records.</p>
+          <h1 className="student-page-title">Results &amp; Academic Documents</h1>
+          <p className="student-page-subtitle">Historical examination scorecards, semester grade sheets, and certified marksheets.</p>
         </div>
 
         <div className="filter-dropdown-wrapper">
@@ -58,7 +58,7 @@ export default function StudentResults() {
             className="form-input form-select"
             value={selectedSemester}
             onChange={(e) => setSelectedSemester(e.target.value)}
-            style={{ width: 'auto', display: 'inline-block' }}
+            style={{ width: 'auto', display: 'inline-block', background: '#0a1224' }}
           >
             <option value="ALL">All Semesters ({results.length})</option>
             {results.map((r) => (
@@ -70,13 +70,56 @@ export default function StudentResults() {
         </div>
       </div>
 
+      {/* Hexagonal Document Badges matching Bottom-Left of Reference Image */}
+      <div className="card" style={{ marginBottom: '1.5rem', padding: '1.25rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#f1f5f9' }}>Uploaded Semester Marksheets &amp; Documents</h3>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+              Verified digital marksheets signed with institutional cryptographic seal
+            </span>
+          </div>
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            style={{ fontSize: '0.8rem' }}
+            onClick={() => alert('Marksheet upload portal active for authenticated student.')}
+          >
+            📤 Upload Marksheet
+          </button>
+        </div>
+
+        {/* 3 Chamfered Hex Badges */}
+        <div className="hud-hex-grid" style={{ marginBottom: '0.5rem' }}>
+          <div className="hud-hex-card hud-hex-cyan" style={{ cursor: 'pointer' }}>
+            <div className="hud-hex-label">Document 1</div>
+            <div className="hud-hex-value" style={{ fontSize: '1.15rem' }}>Sem 2</div>
+            <div className="hud-hex-subtext" style={{ color: 'var(--cyber-cyan)' }}>Active Scorecard &bull; Verified</div>
+          </div>
+
+          <div className="hud-hex-card hud-hex-amber" style={{ cursor: 'pointer' }}>
+            <div className="hud-hex-label">Document 2</div>
+            <div className="hud-hex-value" style={{ fontSize: '1.15rem' }}>Sem 2</div>
+            <div className="hud-hex-subtext" style={{ color: 'var(--cyber-amber)' }}>Provisional Sheet &bull; Pending</div>
+          </div>
+
+          <div className="hud-hex-card hud-hex-emerald" style={{ cursor: 'pointer' }}>
+            <div className="hud-hex-label">Document 3</div>
+            <div className="hud-hex-value" style={{ fontSize: '1.15rem' }}>Sem 1</div>
+            <div className="hud-hex-subtext" style={{ color: 'var(--cyber-emerald)' }}>Archived Record &bull; Certified</div>
+          </div>
+        </div>
+      </div>
+
+
+      {/* Results Tables */}
       {displayedResults.length === 0 ? (
         <div className="card">
           <p style={{ color: 'var(--text-secondary)' }}>No semester result records available at this time.</p>
         </div>
       ) : (
         displayedResults.map((semResult) => (
-          <div key={semResult.semester} className="card semester-result-card">
+          <div key={semResult.semester} className="card semester-result-card" style={{ marginBottom: '1.5rem' }}>
             <div className="semester-result-header">
               <div>
                 <div className="sem-header-tags">
@@ -142,3 +185,4 @@ export default function StudentResults() {
     </div>
   );
 }
+

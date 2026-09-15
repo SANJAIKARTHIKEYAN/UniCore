@@ -13,6 +13,11 @@ const NAV_ITEMS = [
 export default function AdminSidebar({ activeTab, onTabChange, currentUser }) {
   return (
     <aside className="faculty-sidebar admin-sidebar">
+      <div className="cyber-sidebar-brand">
+        <span className="cyber-menu-icon">☰</span>
+        <span className="cyber-brand-text">UNICORE</span>
+      </div>
+
       <div className="faculty-user-card admin-user-card">
         <div className="faculty-avatar admin-avatar">
           {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'A'}

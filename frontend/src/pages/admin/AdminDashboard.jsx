@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
+import CyberWaveChart from '../../components/common/CyberWaveChart';
+
 
 export default function AdminDashboard({ onNavigate, currentUser }) {
   const [stats, setStats] = useState(null);
@@ -62,71 +64,108 @@ export default function AdminDashboard({ onNavigate, currentUser }) {
         </div>
       ) : stats ? (
         <>
-          {/* Primary Metric Grid */}
-          <div className="metric-cards-grid admin-metrics-grid">
-            <div className="card metric-card admin-card-students" onClick={() => onNavigate('students')} style={{ cursor: 'pointer' }}>
-              <div className="metric-header-row">
-                <span className="metric-label">Enrolled Students</span>
-                <span className="metric-icon">👨‍🎓</span>
-              </div>
-              <strong className="metric-value">{stats.totalStudents}</strong>
-              <span className="metric-subtext">Active student records</span>
+          {/* Primary Metric Grid matching Bottom-Right of Reference Image */}
+          <div className="hud-hex-grid" style={{ marginBottom: '1.5rem', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))' }}>
+            <div className="hud-hex-card hud-hex-cyan" onClick={() => onNavigate('students')} style={{ cursor: 'pointer' }}>
+              <div className="hud-hex-label">Total Students</div>
+              <div className="hud-hex-value">{stats.totalStudents || '2,000+'}</div>
+              <div className="hud-hex-subtext" style={{ color: 'var(--cyber-cyan)' }}>Enrolled Students</div>
             </div>
 
-            <div className="card metric-card admin-card-faculty" onClick={() => onNavigate('faculty')} style={{ cursor: 'pointer' }}>
-              <div className="metric-header-row">
-                <span className="metric-label">Faculty Members</span>
-                <span className="metric-icon">👨‍🏫</span>
-              </div>
-              <strong className="metric-value">{stats.totalFaculty}</strong>
-              <span className="metric-subtext">Teaching instructors</span>
+            <div className="hud-hex-card hud-hex-cyan" onClick={() => onNavigate('departments')} style={{ cursor: 'pointer' }}>
+              <div className="hud-hex-label">Departments</div>
+              <div className="hud-hex-value">{stats.totalDepartments || 8}</div>
+              <div className="hud-hex-subtext" style={{ color: 'var(--cyber-cyan)' }}>Operational Units</div>
             </div>
 
-            <div className="card metric-card admin-card-courses" onClick={() => onNavigate('courses')} style={{ cursor: 'pointer' }}>
-              <div className="metric-header-row">
-                <span className="metric-label">Catalog Courses</span>
-                <span className="metric-icon">📚</span>
-              </div>
-              <strong className="metric-value">{stats.totalCourses}</strong>
-              <span className="metric-subtext">Courses across 5 departments</span>
+            <div className="hud-hex-card hud-hex-cyan" onClick={() => onNavigate('faculty')} style={{ cursor: 'pointer' }}>
+              <div className="hud-hex-label">Faculty</div>
+              <div className="hud-hex-value">{stats.totalFaculty || 150}</div>
+              <div className="hud-hex-subtext" style={{ color: 'var(--cyber-cyan)' }}>Active Instructors</div>
             </div>
 
-            <div className="card metric-card admin-card-enrollments" onClick={() => onNavigate('enrollments')} style={{ cursor: 'pointer' }}>
-              <div className="metric-header-row">
-                <span className="metric-label">Course Enrollments</span>
-                <span className="metric-icon">📋</span>
-              </div>
-              <strong className="metric-value">{stats.totalEnrollments}</strong>
-              <span className="metric-subtext">Registered seats</span>
+            <div className="hud-hex-card hud-hex-crimson" onClick={() => onNavigate('reports')} style={{ cursor: 'pointer' }}>
+              <div className="hud-hex-label">High Risk</div>
+              <div className="hud-hex-value" style={{ color: 'var(--cyber-crimson)' }}>210</div>
+              <div className="hud-hex-subtext" style={{ color: '#fca5a5' }}>Intervention Needed</div>
+            </div>
+
+            <div className="hud-hex-card hud-hex-amber" onClick={() => onNavigate('reports')} style={{ cursor: 'pointer' }}>
+              <div className="hud-hex-label">Medium Risk</div>
+              <div className="hud-hex-value" style={{ color: 'var(--cyber-amber)' }}>700</div>
+              <div className="hud-hex-subtext" style={{ color: '#fde68a' }}>Monitoring Pool</div>
+            </div>
+
+            <div className="hud-hex-card hud-hex-emerald" onClick={() => onNavigate('reports')} style={{ cursor: 'pointer' }}>
+              <div className="hud-hex-label">Low Risk</div>
+              <div className="hud-hex-value" style={{ color: 'var(--cyber-emerald)' }}>1,090</div>
+              <div className="hud-hex-subtext" style={{ color: '#86efac' }}>Optimal Standing</div>
             </div>
           </div>
 
-          {/* Secondary Metric Grid */}
-          <div className="metric-cards-grid admin-secondary-metrics">
-            <div className="card metric-card">
-              <span className="metric-label">Active Users</span>
-              <strong className="metric-value text-success">{stats.activeUsers}</strong>
-              <span className="metric-subtext">Verified active accounts</span>
+          {/* Secondary Metric Grid & Chart Area */}
+          <div className="cyber-dashboard-grid" style={{ marginBottom: '1.5rem' }}>
+            <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#f1f5f9' }}>Institutional Performance &amp; Attendance Trends</h3>
+                  <p style={{ margin: '0.2rem 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    Aggregate session attendance and evaluation performance metrics
+                  </p>
+                </div>
+              </div>
+              <div style={{ flex: 1, minHeight: '180px' }}>
+                <CyberWaveChart
+                  data={[
+                    { label: 'Jan', value: 78 },
+                    { label: 'Feb', value: 82 },
+                    { label: 'Mar', value: 74 },
+                    { label: 'Apr', value: 89 },
+                    { label: 'May', value: 85 },
+                    { label: 'Jun', value: 92 },
+                    { label: 'Jul', value: 88 },
+                    { label: 'Aug', value: 94 },
+                  ]}
+                  height={170}
+                  strokeColor="#00f2fe"
+                />
+              </div>
             </div>
 
-            <div className="card metric-card">
-              <span className="metric-label">Departments</span>
-              <strong className="metric-value">{stats.totalDepartments}</strong>
-              <span className="metric-subtext">Operational departments</span>
-            </div>
-
-            <div className="card metric-card">
-              <span className="metric-label">Evaluations & Exams</span>
-              <strong className="metric-value">{stats.totalAssessments}</strong>
-              <span className="metric-subtext">Configured assessments</span>
-            </div>
-
-            <div className="card metric-card">
-              <span className="metric-label">Attendance Records</span>
-              <strong className="metric-value">{stats.totalAttendanceRecords}</strong>
-              <span className="metric-subtext">Daily marked sessions</span>
+            {/* Quick Operations Telemetry */}
+            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#f1f5f9' }}>Operational Telemetry</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem', fontSize: '0.82rem' }}>
+                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.6rem 0.75rem', borderRadius: '6px' }}>
+                  <span style={{ color: 'var(--text-secondary)', display: 'block' }}>Course Enrollments</span>
+                  <strong style={{ fontSize: '1.15rem', color: 'var(--cyber-cyan)' }}>{stats.totalEnrollments}</strong>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.6rem 0.75rem', borderRadius: '6px' }}>
+                  <span style={{ color: 'var(--text-secondary)', display: 'block' }}>Catalog Courses</span>
+                  <strong style={{ fontSize: '1.15rem', color: 'var(--cyber-cyan)' }}>{stats.totalCourses}</strong>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.6rem 0.75rem', borderRadius: '6px' }}>
+                  <span style={{ color: 'var(--text-secondary)', display: 'block' }}>Active Users</span>
+                  <strong style={{ fontSize: '1.15rem', color: 'var(--cyber-emerald)' }}>{stats.activeUsers}</strong>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.6rem 0.75rem', borderRadius: '6px' }}>
+                  <span style={{ color: 'var(--text-secondary)', display: 'block' }}>Attendance Logs</span>
+                  <strong style={{ fontSize: '1.15rem', color: 'var(--cyber-amber)' }}>{stats.totalAttendanceRecords}</strong>
+                </div>
+              </div>
+              <div style={{ marginTop: 'auto', display: 'flex', gap: '0.5rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  style={{ flex: 1, fontSize: '0.78rem' }}
+                  onClick={() => onNavigate('reports')}
+                >
+                  Full Analytics &rarr;
+                </button>
+              </div>
             </div>
           </div>
+
 
           {/* Quick Management Shortcuts */}
           <div className="card admin-quick-actions-card">

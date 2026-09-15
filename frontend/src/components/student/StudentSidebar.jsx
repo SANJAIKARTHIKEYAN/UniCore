@@ -17,6 +17,11 @@ export default function StudentSidebar({ activeTab, onTabChange, currentUser }) 
 
   return (
     <aside className="student-sidebar">
+      <div className="cyber-sidebar-brand">
+        <span className="cyber-menu-icon">☰</span>
+        <span className="cyber-brand-text">UNICORE</span>
+      </div>
+
       <div className="student-user-card">
         <div className="student-avatar">
           {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'S'}
