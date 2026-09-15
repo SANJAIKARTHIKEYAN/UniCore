@@ -25,7 +25,7 @@ export default function StudentAdvisor() {
   }, []);
 
   useEffect(() => {
-    if (chatEndRef.current) {
+    if (chatEndRef.current && typeof chatEndRef.current.scrollIntoView === 'function') {
       chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [conversation, asking]);
@@ -166,15 +166,15 @@ export default function StudentAdvisor() {
                   className="metric-value"
                   style={{
                     color:
-                      overview.overallAttendancePercent >= 75
+                      (overview.overallAttendancePercent ?? 0) >= 75
                         ? 'var(--color-success)'
                         : 'var(--color-danger)',
                   }}
                 >
-                  {overview.overallAttendancePercent.toFixed(1)}%
+                  {(overview.overallAttendancePercent ?? 0).toFixed(1)}%
                 </strong>
                 <span className="metric-subtext">
-                  {overview.overallAttendancePercent >= 75
+                  {(overview.overallAttendancePercent ?? 0) >= 75
                     ? 'Eligible for Examinations'
                     : 'Below 75% Cutoff'}
                 </span>
@@ -238,31 +238,37 @@ export default function StudentAdvisor() {
             </div>
           ) : (
             <div className="advisor-recs-grid" style={{ marginBottom: '2rem' }}>
-              {overview.recommendations.map((rec) => (
-                <div key={rec.id} className={`card advisor-rec-card rec-${rec.priority.toLowerCase()}`}>
+              {overview.recommendations.map((rec, idx) => (
+                <div key={rec.id || `${rec.priority}-${rec.title}-${idx}`} className={`card advisor-rec-card rec-${(rec.priority || 'low').toLowerCase()}`}>
                   <div className="rec-header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                       <span className={`badge ${getPriorityBadgeClass(rec.priority)}`}>
                         {rec.priority} PRIORITY
                       </span>
-                      {rec.relatedCourse && (
-                        <span className="badge badge-secondary">{rec.relatedCourse}</span>
+                      {rec.category && (
+                        <span className="badge badge-secondary">{rec.category}</span>
                       )}
                     </div>
-                    {rec.supportingMetric && (
-                      <span className="rec-metric-tag">{rec.supportingMetric}</span>
+                    {(rec.metricTag || rec.supportingMetric) && (
+                      <span className="rec-metric-tag">{rec.metricTag || rec.supportingMetric}</span>
                     )}
                   </div>
 
                   <h3 className="rec-title">{rec.title}</h3>
-                  <p className="rec-explanation">{rec.explanation}</p>
+                  <p className="rec-explanation">{rec.advice || rec.explanation}</p>
 
-                  {rec.suggestedAction && (
+                  {(rec.actionItem || rec.suggestedAction) && (
                     <div className="rec-action-callout">
                       <span className="rec-action-icon">🎯</span>
                       <div>
-                        <strong>Recommended Action:</strong> {rec.suggestedAction}
+                        <strong>Recommended Action:</strong> {rec.actionItem || rec.suggestedAction}
                       </div>
+                    </div>
+                  )}
+
+                  {rec.rationale && (
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>
+                      <em>Data Rationale: {rec.rationale}</em>
                     </div>
                   )}
                 </div>

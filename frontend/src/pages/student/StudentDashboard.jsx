@@ -161,6 +161,16 @@ export default function StudentDashboard({ onNavigate, currentUser }) {
                 </span>
               </div>
             )}
+            <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ width: 'auto', padding: '0.35rem 0.8rem', fontSize: '0.8rem' }}
+                onClick={() => onNavigate('advisor')}
+              >
+                🤖 Consult AI Advisor &rarr;
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -108,14 +108,49 @@ export default function FacultyDashboard({ onNavigate, onSelectCourse, currentUs
           <span className="stat-subtext">Approved Department</span>
         </div>
 
-        <div className="stat-card">
+        <div className="stat-card" onClick={() => onNavigate('assessments')} style={{ cursor: 'pointer' }}>
           <div className="stat-header">
-            <span className="stat-icon">⚙️</span>
-            <span className="stat-badge status-warning">Evaluation</span>
+            <span className="stat-icon">📋</span>
+            <span className="stat-badge status-warning">Assessments</span>
           </div>
           <div className="stat-value" style={{ fontSize: '1.4rem' }}>Term Active</div>
-          <div className="stat-label">Grading Schedule</div>
-          <span className="stat-subtext">Grade Entry Pending</span>
+          <div className="stat-label">Grading &amp; Tests</div>
+          <span className="stat-subtext">Manage Evaluations</span>
+        </div>
+      </div>
+
+      {/* Quick Action Shortcuts */}
+      <div className="card" style={{ marginBottom: '1.5rem', padding: '1rem 1.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div>
+            <h4 style={{ margin: 0, fontSize: '0.95rem' }}>Faculty Workflows</h4>
+            <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              Direct access to classroom operations, evaluations, and student risk analytics.
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => onNavigate('attendance')}
+            >
+              📅 Daily Attendance
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => onNavigate('assessments')}
+            >
+              📋 Assessments &amp; Marks
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={() => onNavigate('risk')}
+            >
+              🧠 Risk Advisor (ML)
+            </button>
+          </div>
         </div>
       </div>
 

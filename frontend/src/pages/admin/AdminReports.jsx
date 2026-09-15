@@ -5,6 +5,7 @@ export default function AdminReports() {
   const [attendanceSummary, setAttendanceSummary] = useState(null);
   const [assessmentSummary, setAssessmentSummary] = useState(null);
   const [riskOverview, setRiskOverview] = useState(null);
+  const [advisorOverview, setAdvisorOverview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState(null);
 
@@ -16,17 +17,22 @@ export default function AdminReports() {
     try {
       setLoading(true);
       setFeedback(null);
-      const [attRes, assRes, riskRes] = await Promise.all([
+      const [attRes, assRes, riskRes, advRes] = await Promise.all([
         api.getAdminAttendanceSummary(),
         api.getAdminAssessmentsSummary(),
         api.getAdminRiskOverview().catch((err) => {
           console.warn('Failed to load risk overview:', err);
           return null;
         }),
+        api.getAdminAdvisorOverview().catch((err) => {
+          console.warn('Failed to load advisor overview:', err);
+          return null;
+        }),
       ]);
       setAttendanceSummary(attRes);
       setAssessmentSummary(assRes);
       setRiskOverview(riskRes);
+      setAdvisorOverview(advRes);
     } catch (err) {
       setFeedback({ type: 'error', message: err.message || 'Failed to load analytics reports.' });
     } finally {
@@ -294,7 +300,7 @@ export default function AdminReports() {
 
               {/* High Risk Breakdown by Department */}
               {riskOverview.departmentBreakdown && Object.keys(riskOverview.departmentBreakdown).length > 0 && (
-                <div className="card table-card">
+                <div className="card table-card" style={{ marginBottom: '1.5rem' }}>
                   <div className="table-header-strip">
                     <h3>High-Risk Distribution by Academic Department</h3>
                   </div>
@@ -328,6 +334,79 @@ export default function AdminReports() {
                   </div>
                 </div>
               )}
+            </>
+          )}
+
+          {/* AI Advisor Institutional Guidance Telemetry */}
+          {advisorOverview && (
+            <>
+              <div className="section-header-row" style={{ marginBottom: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <h2 className="section-subheading">🤖 AI Advisor Institutional Guidance Telemetry</h2>
+                  <span className="badge badge-STUDENT" style={{ fontSize: '0.72rem' }}>
+                    Rule-Based Intent Engine Active
+                  </span>
+                </div>
+              </div>
+              <div className="metric-cards-grid" style={{ marginBottom: '1.5rem' }}>
+                <div className="card metric-card">
+                  <span className="metric-label">Profiles Analyzed</span>
+                  <strong className="metric-value">{advisorOverview.totalStudentsAnalyzed}</strong>
+                  <span className="metric-subtext">Students with active telemetry</span>
+                </div>
+                <div className="card metric-card" style={{ borderLeft: '4px solid var(--color-danger)' }}>
+                  <span className="metric-label">🚨 High-Priority Actions</span>
+                  <strong className="metric-value text-danger">{advisorOverview.highPriorityCount}</strong>
+                  <span className="metric-subtext">Critical interventions required</span>
+                </div>
+                <div className="card metric-card" style={{ borderLeft: '4px solid var(--color-warning)' }}>
+                  <span className="metric-label">📅 Attendance Warnings</span>
+                  <strong className="metric-value text-warning">{advisorOverview.lowAttendanceStudentsCount}</strong>
+                  <span className="metric-subtext">Below 75% exam cutoff</span>
+                </div>
+                <div className="card metric-card" style={{ borderLeft: '4px solid var(--color-info)' }}>
+                  <span className="metric-label">📚 Academic Remediation</span>
+                  <strong className="metric-value text-info">{advisorOverview.lowMarksStudentsCount}</strong>
+                  <span className="metric-subtext">Courses with scores &lt; 60%</span>
+                </div>
+              </div>
+
+              {advisorOverview.priorityDistributionByDepartment &&
+                Object.keys(advisorOverview.priorityDistributionByDepartment).length > 0 && (
+                  <div className="card table-card">
+                    <div className="table-header-strip">
+                      <h3>High-Priority Advisor Interventions by Department</h3>
+                    </div>
+                    <div className="table-responsive">
+                      <table className="unicore-table">
+                        <thead>
+                          <tr>
+                            <th>Department</th>
+                            <th>Priority Cases</th>
+                            <th>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Object.entries(advisorOverview.priorityDistributionByDepartment).map(([dept, count]) => (
+                            <tr key={dept}>
+                              <td>
+                                <span className="badge badge-secondary">{dept}</span>
+                              </td>
+                              <td>
+                                <strong className="text-warning">{count}</strong>
+                              </td>
+                              <td>
+                                <span className="badge badge-priority-medium">
+                                  Advisor Action Active
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
             </>
           )}
         </>
