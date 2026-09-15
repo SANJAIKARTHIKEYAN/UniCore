@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { id: 'roster', label: 'Student Roster', icon: '👥' },
   { id: 'attendance', label: 'Attendance', icon: '📝' },
   { id: 'assessments', label: 'Assessments', icon: '📋' },
+  { id: 'risk', label: 'Risk Advisor (ML)', icon: '🧠' },
   { id: 'profile', label: 'Faculty Profile', icon: '👤' },
 ];
 

@@ -5,6 +5,7 @@ import FacultyCourses from '../../pages/faculty/FacultyCourses';
 import FacultyCourseRoster from '../../pages/faculty/FacultyCourseRoster';
 import FacultyAttendance from '../../pages/faculty/FacultyAttendance';
 import FacultyAssessments from '../../pages/faculty/FacultyAssessments';
+import FacultyRiskOverview from '../../pages/faculty/FacultyRiskOverview';
 import FacultyProfile from '../../pages/faculty/FacultyProfile';
 
 export default function FacultyLayout({ currentUser, onLogout }) {
@@ -49,6 +50,13 @@ export default function FacultyLayout({ currentUser, onLogout }) {
       case 'assessments':
         return (
           <FacultyAssessments
+            selectedCourseId={selectedCourseId}
+            onSelectCourse={handleSelectCourse}
+          />
+        );
+      case 'risk':
+        return (
+          <FacultyRiskOverview
             selectedCourseId={selectedCourseId}
             onSelectCourse={handleSelectCourse}
           />

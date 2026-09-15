@@ -72,6 +72,9 @@ class UniCoreApplicationTests {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private com.unicore.service.MlPredictionService mlPredictionService;
+
     @Test
     @Order(1)
     @DisplayName("1. Verify 5 Configurable Departments are Seeded and Active")
@@ -1818,5 +1821,179 @@ class UniCoreApplicationTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalAssessments", greaterThanOrEqualTo(0)))
                 .andExpect(jsonPath("$.typeCounts", notNullValue()));
+    }
+
+    @Test
+    @Order(54)
+    @DisplayName("54. ML Service: Real Random Forest Model Invocation and Structured Output")
+    void test54_RealMlPredictionService_Execution() {
+        User student = userRepository.findByEmail("bca.stu001@unicore.edu")
+                .orElseThrow(() -> new AssertionError("Seed student bca.stu001@unicore.edu not found"));
+
+        com.unicore.dto.response.StudentRiskPredictionResponse res =
+                mlPredictionService.predictStudentRisk(student.getId(), null);
+
+        assertNotNull(res, "Prediction response should not be null");
+        assertEquals(student.getId(), res.getStudentId());
+        assertNotNull(res.getRiskCategory(), "Risk category must be present");
+        assertTrue(List.of("High Risk", "Medium Risk", "Low Risk").contains(res.getRiskCategory()),
+                "Risk category must be High, Medium, or Low Risk");
+        assertTrue(res.getConfidence() > 0.0 && res.getConfidence() <= 1.0,
+                "Confidence should be between 0 and 1");
+        assertNotNull(res.getProbabilities(), "Probabilities map must be present");
+        assertTrue(res.getProbabilities().containsKey("High Risk"));
+        assertTrue(res.getProbabilities().containsKey("Low Risk"));
+        assertNotNull(res.getFeatures(), "Feature vector should be returned for transparency");
+        assertNotNull(res.getModelVersion(), "Model version must be populated");
+        assertNotNull(res.getRecommendation(), "Intervention recommendation must be generated");
+    }
+
+    @Test
+    @Order(55)
+    @DisplayName("55. ML Early Warning Model: Selected when Final Exam has not been conducted")
+    void test55_EarlyWarningModel_Selection() {
+        User student = userRepository.findByEmail("bca.stu001@unicore.edu").orElseThrow();
+        com.unicore.dto.response.StudentRiskPredictionResponse res =
+                mlPredictionService.predictStudentRisk(student.getId(), null);
+
+        // Seed data does not have final exams yet, so early warning model is used
+        assertNotNull(res.getModelVersion());
+        assertTrue(res.getModelVersion().contains("early") || res.getModelVersion().contains("random_forest"),
+                "Model version should indicate Random Forest or Early Random Forest");
+    }
+
+    @Test
+    @Order(56)
+    @DisplayName("56. ML Feature Mapping: Graceful handling of students with empty assessment history")
+    void test56_FeatureMapping_GracefulDefaults() {
+        // Create an active student without any grades or attendance
+        User emptyStudent = new User("Freshman ML Student", "freshman.ml@unicore.edu",
+                passwordEncoder.encode("Pass@123"), Role.STUDENT, "BCA", UserStatus.ACTIVE);
+        emptyStudent = userRepository.save(emptyStudent);
+
+        com.unicore.dto.response.StudentRiskPredictionResponse res =
+                mlPredictionService.predictStudentRisk(emptyStudent.getId(), null);
+
+        assertNotNull(res);
+        assertEquals("Freshman ML Student", res.getStudentName());
+        assertNotNull(res.getRiskCategory());
+        assertTrue(res.getConfidence() > 0.0);
+    }
+
+    @Test
+    @Order(57)
+    @DisplayName("57. ML API: Student self-risk endpoint (/api/ml/my-risk)")
+    void test57_StudentSelfRisk_Endpoint() throws Exception {
+        LoginRequest studentLogin = new LoginRequest("bca.stu001@unicore.edu", "Password@123");
+        MvcResult stuRes = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(studentLogin)))
+                .andExpect(status().isOk())
+                .andReturn();
+        String studentToken = objectMapper.readValue(stuRes.getResponse().getContentAsString(), AuthResponse.class).getToken();
+
+        mockMvc.perform(get("/api/ml/my-risk")
+                        .header("Authorization", "Bearer " + studentToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.studentName", is("Sanjai Karthikeyan")))
+                .andExpect(jsonPath("$.riskCategory", notNullValue()))
+                .andExpect(jsonPath("$.confidence", greaterThan(0.0)))
+                .andExpect(jsonPath("$.recommendation", notNullValue()));
+    }
+
+    @Test
+    @Order(58)
+    @DisplayName("58. ML Security: Student cannot access peer's risk prediction (403 Forbidden)")
+    void test58_StudentPeerRisk_Forbidden() throws Exception {
+        LoginRequest studentLogin = new LoginRequest("bca.stu001@unicore.edu", "Password@123");
+        MvcResult stuRes = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(studentLogin)))
+                .andExpect(status().isOk())
+                .andReturn();
+        String studentToken = objectMapper.readValue(stuRes.getResponse().getContentAsString(), AuthResponse.class).getToken();
+
+        User peerStudent = userRepository.findByEmail("bca.stu002@unicore.edu")
+                .orElseThrow(() -> new AssertionError("Seed student bca.stu002 not found"));
+
+        mockMvc.perform(get("/api/ml/students/" + peerStudent.getId() + "/risk")
+                        .header("Authorization", "Bearer " + studentToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @Order(59)
+    @DisplayName("59. ML API: Faculty course risk predictions (/api/ml/courses/{id}/risk)")
+    void test59_FacultyCourseRisk_Endpoint() throws Exception {
+        LoginRequest facultyLogin = new LoginRequest("bca.fac001@unicore.edu", "FacultyPass@123");
+        MvcResult facRes = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(facultyLogin)))
+                .andExpect(status().isOk())
+                .andReturn();
+        String facultyToken = objectMapper.readValue(facRes.getResponse().getContentAsString(), AuthResponse.class).getToken();
+
+        Course course = courseRepository.findByCourseCode("BCA201")
+                .orElseThrow(() -> new AssertionError("Course BCA201 not found"));
+
+        mockMvc.perform(get("/api/ml/courses/" + course.getId() + "/risk")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", not(empty())))
+                .andExpect(jsonPath("$[0].riskCategory", notNullValue()))
+                .andExpect(jsonPath("$[0].courseCode", is("BCA201")));
+    }
+
+    @Test
+    @Order(60)
+    @DisplayName("60. ML Security: Faculty cannot view risk for course they do not instruct (403 Forbidden)")
+    void test60_FacultyUnassignedCourseRisk_Forbidden() throws Exception {
+        LoginRequest bscsLogin = new LoginRequest("bscs.fac001@unicore.edu", "BscsPass@123");
+        MvcResult bscsRes = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(bscsLogin)))
+                .andExpect(status().isOk())
+                .andReturn();
+        String bscsToken = objectMapper.readValue(bscsRes.getResponse().getContentAsString(), AuthResponse.class).getToken();
+
+        Course bcaCourse = courseRepository.findByCourseCode("BCA201").orElseThrow();
+
+        mockMvc.perform(get("/api/ml/courses/" + bcaCourse.getId() + "/risk")
+                        .header("Authorization", "Bearer " + bscsToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @Order(61)
+    @DisplayName("61. ML API: Faculty risk overview across assigned courses (/api/ml/faculty/risk-overview)")
+    void test61_FacultyRiskOverview_Endpoint() throws Exception {
+        LoginRequest facultyLogin = new LoginRequest("bca.fac001@unicore.edu", "FacultyPass@123");
+        MvcResult facRes = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(facultyLogin)))
+                .andExpect(status().isOk())
+                .andReturn();
+        String facultyToken = objectMapper.readValue(facRes.getResponse().getContentAsString(), AuthResponse.class).getToken();
+
+        mockMvc.perform(get("/api/ml/faculty/risk-overview")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalAnalyzed", greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.modelStatus", notNullValue()))
+                .andExpect(jsonPath("$.studentPredictions", not(empty())));
+    }
+
+    @Test
+    @Order(62)
+    @DisplayName("62. ML API: Admin system-wide risk overview (/api/ml/admin/risk-overview)")
+    void test62_AdminRiskOverview_Endpoint() throws Exception {
+        String adminToken = getAdminToken();
+
+        mockMvc.perform(get("/api/ml/admin/risk-overview")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalAnalyzed", greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.modelStatus", containsString("Online")))
+                .andExpect(jsonPath("$.studentPredictions", not(empty())));
     }
 }

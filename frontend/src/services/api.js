@@ -212,4 +212,13 @@ export const api = {
   },
   getAdminAttendanceSummary: () => request('/admin/attendance/summary'),
   getAdminAssessmentsSummary: () => request('/admin/assessments/summary'),
+
+  // ML Risk Prediction Engine (Part 7)
+  getMyRisk: () => request('/ml/my-risk'),
+  getStudentRisk: (studentId, courseId) =>
+    request(`/ml/students/${studentId}/risk${courseId ? `?courseId=${courseId}` : ''}`),
+  getCourseRisk: (courseId) => request(`/ml/courses/${courseId}/risk`),
+  getFacultyRiskOverview: () => request('/ml/faculty/risk-overview'),
+  getAdminRiskOverview: () => request('/ml/admin/risk-overview'),
 };
+

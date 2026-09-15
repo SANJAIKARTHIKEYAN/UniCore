@@ -275,3 +275,19 @@ CREATE TABLE IF NOT EXISTS notifications (
     expires_at TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 13. Student Risk Predictions (ML Early Warning Advisory Cache)
+CREATE TABLE IF NOT EXISTS student_risk_predictions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    student_id BIGINT NOT NULL,
+    course_id BIGINT,
+    risk_category VARCHAR(30) NOT NULL,
+    confidence DOUBLE,
+    probabilities_json TEXT,
+    model_version VARCHAR(50),
+    predicted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_risk_student FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_risk_course FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    INDEX idx_risk_student (student_id),
+    INDEX idx_risk_category (risk_category)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+

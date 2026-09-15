@@ -4,6 +4,7 @@ import { api } from '../../services/api';
 export default function AdminReports() {
   const [attendanceSummary, setAttendanceSummary] = useState(null);
   const [assessmentSummary, setAssessmentSummary] = useState(null);
+  const [riskOverview, setRiskOverview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState(null);
 
@@ -15,12 +16,17 @@ export default function AdminReports() {
     try {
       setLoading(true);
       setFeedback(null);
-      const [attRes, assRes] = await Promise.all([
+      const [attRes, assRes, riskRes] = await Promise.all([
         api.getAdminAttendanceSummary(),
         api.getAdminAssessmentsSummary(),
+        api.getAdminRiskOverview().catch((err) => {
+          console.warn('Failed to load risk overview:', err);
+          return null;
+        }),
       ]);
       setAttendanceSummary(attRes);
       setAssessmentSummary(assRes);
+      setRiskOverview(riskRes);
     } catch (err) {
       setFeedback({ type: 'error', message: err.message || 'Failed to load analytics reports.' });
     } finally {
@@ -195,7 +201,7 @@ export default function AdminReports() {
 
               {/* Course Assessment Breakdown */}
               {assessmentSummary.courseOverviews && assessmentSummary.courseOverviews.length > 0 && (
-                <div className="card table-card">
+                <div className="card table-card" style={{ marginBottom: '1.5rem' }}>
                   <div className="table-header-strip">
                     <h3>Assessment Coverage by Course</h3>
                   </div>
@@ -239,6 +245,81 @@ export default function AdminReports() {
                                   {co.totalWeightage.toFixed(0)}%
                                 </span>
                               </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ML Early Warning & Risk Analytics */}
+          {riskOverview && (
+            <>
+              <div className="section-header-row" style={{ marginBottom: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <h2 className="section-subheading">🧠 ML Early-Warning Student Risk Analytics</h2>
+                  <span className="badge badge-attendance-present" style={{ fontSize: '0.72rem' }}>
+                    Random Forest Engine Online
+                  </span>
+                </div>
+              </div>
+              <div className="metric-cards-grid" style={{ marginBottom: '1.5rem' }}>
+                <div className="card metric-card">
+                  <span className="metric-label">Students Analyzed</span>
+                  <strong className="metric-value">{riskOverview.totalAnalyzed}</strong>
+                  <span className="metric-subtext">Active student records</span>
+                </div>
+                <div className="card metric-card" style={{ borderLeft: '4px solid var(--color-danger)' }}>
+                  <span className="metric-label">🚨 High Risk</span>
+                  <strong className="metric-value text-danger">{riskOverview.highRiskCount}</strong>
+                  <span className="metric-subtext">
+                    {riskOverview.highRiskPercentage.toFixed(1)}% of student body
+                  </span>
+                </div>
+                <div className="card metric-card" style={{ borderLeft: '4px solid var(--color-warning)' }}>
+                  <span className="metric-label">⚠️ Medium Risk</span>
+                  <strong className="metric-value text-warning">{riskOverview.mediumRiskCount}</strong>
+                  <span className="metric-subtext">Requires targeted coaching</span>
+                </div>
+                <div className="card metric-card" style={{ borderLeft: '4px solid var(--color-success)' }}>
+                  <span className="metric-label">✅ Low Risk</span>
+                  <strong className="metric-value text-success">{riskOverview.lowRiskCount}</strong>
+                  <span className="metric-subtext">Healthy academic pacing</span>
+                </div>
+              </div>
+
+              {/* High Risk Breakdown by Department */}
+              {riskOverview.departmentBreakdown && Object.keys(riskOverview.departmentBreakdown).length > 0 && (
+                <div className="card table-card">
+                  <div className="table-header-strip">
+                    <h3>High-Risk Distribution by Academic Department</h3>
+                  </div>
+                  <div className="table-responsive">
+                    <table className="unicore-table">
+                      <thead>
+                        <tr>
+                          <th>Department</th>
+                          <th>High-Risk Students</th>
+                          <th>Action Required</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(riskOverview.departmentBreakdown).map(([dept, count]) => (
+                          <tr key={dept}>
+                            <td>
+                              <span className="badge badge-secondary">{dept}</span>
+                            </td>
+                            <td>
+                              <strong className="text-danger">{count}</strong>
+                            </td>
+                            <td>
+                              <span className="badge badge-attendance-absent">
+                                Academic Intervention Recommended
+                              </span>
                             </td>
                           </tr>
                         ))}
