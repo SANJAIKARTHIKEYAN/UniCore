@@ -114,4 +114,24 @@ export const api = {
     request(`/admin/approved-faculty/${id}/status`, {
       method: 'PATCH',
     }),
+
+  // Faculty Assessment & Grading (Part 5.4)
+  createAssessment: (courseId, payload) =>
+    request(`/faculty/courses/${courseId}/assessments`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  getCourseAssessments: (courseId) =>
+    request(`/faculty/courses/${courseId}/assessments`),
+  getAssessmentMarks: (courseId, assessmentId) =>
+    request(`/faculty/courses/${courseId}/assessments/${assessmentId}/marks`),
+  submitMarks: (courseId, assessmentId, payload) =>
+    request(`/faculty/courses/${courseId}/assessments/${assessmentId}/marks`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+  calculateGrades: (courseId) =>
+    request(`/faculty/courses/${courseId}/grades/calculate`, {
+      method: 'POST',
+    }),
 };

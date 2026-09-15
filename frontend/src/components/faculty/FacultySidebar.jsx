@@ -5,6 +5,7 @@ const NAV_ITEMS = [
   { id: 'courses', label: 'My Courses', icon: '📚' },
   { id: 'roster', label: 'Student Roster', icon: '👥' },
   { id: 'attendance', label: 'Attendance', icon: '📝' },
+  { id: 'assessments', label: 'Assessments', icon: '📋' },
   { id: 'profile', label: 'Faculty Profile', icon: '👤' },
 ];
 

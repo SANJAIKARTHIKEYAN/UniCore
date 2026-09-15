@@ -210,7 +210,32 @@ CREATE TABLE IF NOT EXISTS attendance_records (
     INDEX idx_attendance_student_course (student_id, course_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 10. Fee Records (Semester-wise fee tracking)
+-- 10. Assessments (Faculty-created evaluations per course)
+CREATE TABLE IF NOT EXISTS assessments (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    course_id BIGINT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    type ENUM('MIDTERM', 'FINAL', 'ASSIGNMENT', 'QUIZ', 'LAB', 'PROJECT') NOT NULL,
+    max_marks DOUBLE NOT NULL,
+    weightage DOUBLE NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_assessment_course FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    INDEX idx_assessment_course (course_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 11. Assessment Marks (Per-student mark per assessment)
+CREATE TABLE IF NOT EXISTS assessment_marks (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    assessment_id BIGINT NOT NULL,
+    student_id BIGINT NOT NULL,
+    marks_obtained DOUBLE,
+    graded_at TIMESTAMP,
+    CONSTRAINT fk_mark_assessment FOREIGN KEY (assessment_id) REFERENCES assessments(id) ON DELETE CASCADE,
+    CONSTRAINT fk_mark_student FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_assessment_student (assessment_id, student_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 12. Fee Records (Semester-wise fee tracking)
 CREATE TABLE IF NOT EXISTS fee_records (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     student_id BIGINT NOT NULL,

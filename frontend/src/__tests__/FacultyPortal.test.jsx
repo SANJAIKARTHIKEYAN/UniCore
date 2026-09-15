@@ -9,6 +9,7 @@ import FacultyCourses from '../pages/faculty/FacultyCourses';
 import FacultyCourseRoster from '../pages/faculty/FacultyCourseRoster';
 import FacultyProfile from '../pages/faculty/FacultyProfile';
 import FacultyAttendance from '../pages/faculty/FacultyAttendance';
+import FacultyAssessments from '../pages/faculty/FacultyAssessments';
 import { api } from '../services/api';
 
 // Mock the API service
@@ -19,6 +20,11 @@ vi.mock('../services/api', () => ({
     getMyFacultyProfile: vi.fn(),
     getCourseAttendance: vi.fn(),
     submitCourseAttendance: vi.fn(),
+    createAssessment: vi.fn(),
+    getCourseAssessments: vi.fn(),
+    getAssessmentMarks: vi.fn(),
+    submitMarks: vi.fn(),
+    calculateGrades: vi.fn(),
   },
 }));
 
@@ -306,6 +312,80 @@ describe('Faculty Portal Components & Shell (Parts 5.2 & 5.3)', () => {
 
     await waitFor(() => {
       expect(api.getCourseAttendance).toHaveBeenCalledWith(4, '2026-09-14');
+    });
+  });
+
+  it('9. FacultyAssessments renders configured assessments and navigation tabs', async () => {
+    api.getMyAssignedCourses.mockResolvedValue(mockAssignedCourses);
+    api.getCourseAssessments.mockResolvedValue([
+      { id: 101, title: 'Midterm Exam 1', type: 'MIDTERM', maxMarks: 50, weightage: 30 },
+      { id: 102, title: 'End Term Project', type: 'PROJECT', maxMarks: 100, weightage: 70 },
+    ]);
+
+    render(
+      <FacultyAssessments
+        selectedCourseId={4}
+        onSelectCourse={vi.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Assessment & Grading Engine')).toBeInTheDocument();
+      expect(screen.getByText('Midterm Exam 1')).toBeInTheDocument();
+      expect(screen.getByText('End Term Project')).toBeInTheDocument();
+      expect(screen.getByText(/30% Weight/i)).toBeInTheDocument();
+      expect(screen.getByText(/70% Weight/i)).toBeInTheDocument();
+    });
+  });
+
+  it('10. FacultyAssessments calculates and publishes final student grades', async () => {
+    api.getMyAssignedCourses.mockResolvedValue(mockAssignedCourses);
+    api.getCourseAssessments.mockResolvedValue([
+      { id: 101, title: 'Midterm Exam', type: 'MIDTERM', maxMarks: 50, weightage: 50 },
+    ]);
+    api.calculateGrades.mockResolvedValue({
+      courseId: 4,
+      courseCode: 'BCA201',
+      courseName: 'Java Programming',
+      totalStudents: 2,
+      gradedStudents: 2,
+      studentSummaries: [
+        {
+          studentId: 10,
+          studentRegistrationNumber: 'BCA-STU-001',
+          studentName: 'Sanjai Karthikeyan',
+          finalPercentage: 92.0,
+          finalGrade: 'O',
+          gradePoints: 10.0,
+          assessmentScores: [],
+        },
+      ],
+    });
+
+    render(
+      <FacultyAssessments
+        selectedCourseId={4}
+        onSelectCourse={vi.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Assessment & Grading Engine')).toBeInTheDocument();
+    });
+
+    // Switch to Grade Summary tab
+    const gradeTabBtn = screen.getByText(/Grade Summary & Publish/i);
+    fireEvent.click(gradeTabBtn);
+
+    // Click Calculate & Publish Grades
+    const calcBtn = screen.getByText(/Calculate & Publish Grades/i);
+    fireEvent.click(calcBtn);
+
+    await waitFor(() => {
+      expect(api.calculateGrades).toHaveBeenCalledWith(4);
+      expect(screen.getByText('Sanjai Karthikeyan')).toBeInTheDocument();
+      expect(screen.getByText('92%')).toBeInTheDocument();
+      expect(screen.getByText('O')).toBeInTheDocument();
     });
   });
 });

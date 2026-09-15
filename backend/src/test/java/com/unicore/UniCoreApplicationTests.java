@@ -1151,4 +1151,232 @@ class UniCoreApplicationTests {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", containsString("is not enrolled in course")));
     }
+
+    @Test
+    @Order(39)
+    @DisplayName("39. Faculty Assessment: Create Assessment Returns 201 with Correct Payload")
+    void test39_CreateAssessment_Returns201() throws Exception {
+        LoginRequest facultyLogin = new LoginRequest("bca.fac001@unicore.edu", "FacultyPass@123");
+        MvcResult facRes = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(facultyLogin)))
+                .andReturn();
+        String facultyToken = objectMapper.readValue(facRes.getResponse().getContentAsString(), AuthResponse.class).getToken();
+
+        com.unicore.entity.Course bca201 = courseRepository.findByCourseCode("BCA201").orElseThrow();
+
+        String assessmentBody = "{\"title\": \"Midterm Exam\", \"type\": \"MIDTERM\", \"maxMarks\": 50.0, \"weightage\": 40.0}";
+
+        mockMvc.perform(post("/api/faculty/courses/" + bca201.getId() + "/assessments")
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(assessmentBody))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id", notNullValue()))
+                .andExpect(jsonPath("$.title", is("Midterm Exam")))
+                .andExpect(jsonPath("$.type", is("MIDTERM")))
+                .andExpect(jsonPath("$.maxMarks", is(50.0)))
+                .andExpect(jsonPath("$.weightage", is(40.0)))
+                .andExpect(jsonPath("$.courseCode", is("BCA201")));
+
+        // Cross-faculty creation rejected
+        LoginRequest bscsLogin = new LoginRequest("bscs.fac001@unicore.edu", "BscsPass@123");
+        MvcResult bscsRes = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(bscsLogin)))
+                .andReturn();
+        String bscsToken = objectMapper.readValue(bscsRes.getResponse().getContentAsString(), AuthResponse.class).getToken();
+
+        mockMvc.perform(post("/api/faculty/courses/" + bca201.getId() + "/assessments")
+                        .header("Authorization", "Bearer " + bscsToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(assessmentBody))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message", containsString("not assigned to instruct course")));
+    }
+
+    @Test
+    @Order(40)
+    @DisplayName("40. Faculty Assessment: List Assessments Returns Created Assessments")
+    void test40_ListAssessments_ReturnsAssessments() throws Exception {
+        LoginRequest facultyLogin = new LoginRequest("bca.fac001@unicore.edu", "FacultyPass@123");
+        MvcResult facRes = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(facultyLogin)))
+                .andReturn();
+        String facultyToken = objectMapper.readValue(facRes.getResponse().getContentAsString(), AuthResponse.class).getToken();
+
+        com.unicore.entity.Course bca201 = courseRepository.findByCourseCode("BCA201").orElseThrow();
+
+        String assignmentBody = "{\"title\": \"Assignment 1\", \"type\": \"ASSIGNMENT\", \"maxMarks\": 20.0, \"weightage\": 20.0}";
+        mockMvc.perform(post("/api/faculty/courses/" + bca201.getId() + "/assessments")
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(assignmentBody))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/faculty/courses/" + bca201.getId() + "/assessments")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", not(empty())))
+                .andExpect(jsonPath("$[0].courseCode", is("BCA201")))
+                .andExpect(jsonPath("$[0].id", notNullValue()))
+                .andExpect(jsonPath("$[0].maxMarks", greaterThan(0.0)));
+    }
+
+    @Test
+    @Order(41)
+    @DisplayName("41. Faculty Assessment: Submit Marks with Upsert Logic and Validation")
+    void test41_SubmitMarks_UpsertAndValidation() throws Exception {
+        LoginRequest facultyLogin = new LoginRequest("bca.fac001@unicore.edu", "FacultyPass@123");
+        MvcResult facRes = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(facultyLogin)))
+                .andReturn();
+        String facultyToken = objectMapper.readValue(facRes.getResponse().getContentAsString(), AuthResponse.class).getToken();
+
+        com.unicore.entity.Course bca201 = courseRepository.findByCourseCode("BCA201").orElseThrow();
+        User student = userRepository.findByEmail("bca.stu001@unicore.edu").orElseThrow();
+
+        MvcResult listRes = mockMvc.perform(get("/api/faculty/courses/" + bca201.getId() + "/assessments")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isOk())
+                .andReturn();
+        com.fasterxml.jackson.databind.JsonNode assessmentNodes =
+                objectMapper.readTree(listRes.getResponse().getContentAsString());
+        long midtermId = -1L;
+        double maxMarks = 50.0;
+        for (com.fasterxml.jackson.databind.JsonNode node : assessmentNodes) {
+            if ("MIDTERM".equals(node.get("type").asText())) {
+                midtermId = node.get("id").asLong();
+                maxMarks = node.get("maxMarks").asDouble();
+                break;
+            }
+        }
+        assertTrue(midtermId > 0, "Midterm assessment must exist from test 39");
+
+        String markBody = "{\"entries\": [{\"studentId\": " + student.getId() + ", \"marksObtained\": 42.5}]}";
+        mockMvc.perform(put("/api/faculty/courses/" + bca201.getId() + "/assessments/" + midtermId + "/marks")
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(markBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message", containsString("Marks saved successfully")));
+
+        String updateBody = "{\"entries\": [{\"studentId\": " + student.getId() + ", \"marksObtained\": 45.0}]}";
+        mockMvc.perform(put("/api/faculty/courses/" + bca201.getId() + "/assessments/" + midtermId + "/marks")
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updateBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message", containsString("Marks saved successfully")));
+
+        double over = maxMarks + 10.0;
+        String overBody = "{\"entries\": [{\"studentId\": " + student.getId() + ", \"marksObtained\": " + over + "}]}";
+        mockMvc.perform(put("/api/faculty/courses/" + bca201.getId() + "/assessments/" + midtermId + "/marks")
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(overBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", containsString("exceed maximum allowed marks")));
+
+        User adminUser = userRepository.findByEmail("admin@unicore.edu").orElseThrow();
+        String invalidBody = "{\"entries\": [{\"studentId\": " + adminUser.getId() + ", \"marksObtained\": 30.0}]}";
+        mockMvc.perform(put("/api/faculty/courses/" + bca201.getId() + "/assessments/" + midtermId + "/marks")
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", containsString("is not enrolled in course")));
+    }
+
+    @Test
+    @Order(42)
+    @DisplayName("42. Faculty Assessment: Get Mark Sheet Returns Students with Marks and Percentage")
+    void test42_GetMarkSheet_ReturnsMarksAndPercentage() throws Exception {
+        LoginRequest facultyLogin = new LoginRequest("bca.fac001@unicore.edu", "FacultyPass@123");
+        MvcResult facRes = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(facultyLogin)))
+                .andReturn();
+        String facultyToken = objectMapper.readValue(facRes.getResponse().getContentAsString(), AuthResponse.class).getToken();
+
+        com.unicore.entity.Course bca201 = courseRepository.findByCourseCode("BCA201").orElseThrow();
+        User student = userRepository.findByEmail("bca.stu001@unicore.edu").orElseThrow();
+
+        MvcResult listRes = mockMvc.perform(get("/api/faculty/courses/" + bca201.getId() + "/assessments")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andReturn();
+        com.fasterxml.jackson.databind.JsonNode assessmentNodes =
+                objectMapper.readTree(listRes.getResponse().getContentAsString());
+        long midtermId = -1L;
+        for (com.fasterxml.jackson.databind.JsonNode node : assessmentNodes) {
+            if ("MIDTERM".equals(node.get("type").asText())) {
+                midtermId = node.get("id").asLong();
+                break;
+            }
+        }
+        assertTrue(midtermId > 0, "Midterm assessment must exist");
+
+        mockMvc.perform(get("/api/faculty/courses/" + bca201.getId() + "/assessments/" + midtermId + "/marks")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", not(empty())))
+                .andExpect(jsonPath("$[0].assessmentTitle", notNullValue()))
+                .andExpect(jsonPath("$[0].studentName", notNullValue()))
+                .andExpect(jsonPath("$[0].maxMarks", greaterThan(0.0)));
+
+        // 45.0 / 50.0 * 100 = 90.0%
+        mockMvc.perform(get("/api/faculty/courses/" + bca201.getId() + "/assessments/" + midtermId + "/marks")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.studentUserId == " + student.getId() + ")].marksObtained",
+                        contains(45.0)))
+                .andExpect(jsonPath("$[?(@.studentUserId == " + student.getId() + ")].percentage",
+                        contains(90.0)));
+    }
+
+    @Test
+    @Order(43)
+    @DisplayName("43. Faculty Assessment: Calculate Grades Updates Enrollment and Rejects Cross-Faculty")
+    void test43_CalculateGrades_UpdatesEnrollmentAndRejectsCrossFaculty() throws Exception {
+        LoginRequest facultyLogin = new LoginRequest("bca.fac001@unicore.edu", "FacultyPass@123");
+        MvcResult facRes = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(facultyLogin)))
+                .andReturn();
+        String facultyToken = objectMapper.readValue(facRes.getResponse().getContentAsString(), AuthResponse.class).getToken();
+
+        com.unicore.entity.Course bca201 = courseRepository.findByCourseCode("BCA201").orElseThrow();
+
+        mockMvc.perform(post("/api/faculty/courses/" + bca201.getId() + "/grades/calculate")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.courseCode", is("BCA201")))
+                .andExpect(jsonPath("$.students", not(empty())))
+                .andExpect(jsonPath("$.students[0].studentName", notNullValue()))
+                .andExpect(jsonPath("$.students[0].assessmentScores", not(empty())));
+
+        User student = userRepository.findByEmail("bca.stu001@unicore.edu").orElseThrow();
+        List<com.unicore.entity.Enrollment> enrollments = enrollmentRepository.findByStudentId(student.getId());
+        com.unicore.entity.Enrollment enrollment = enrollments.stream()
+                .filter(e -> e.getCourse().getId().equals(bca201.getId()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Enrollment not found for student in BCA201"));
+
+        assertNotNull(enrollment.getGrade(), "Grade should be written back to enrollment");
+        assertNotNull(enrollment.getGradePoints(), "Grade points should be written back to enrollment");
+
+        LoginRequest bscsLogin = new LoginRequest("bscs.fac001@unicore.edu", "BscsPass@123");
+        MvcResult bscsRes = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(bscsLogin)))
+                .andReturn();
+        String bscsToken = objectMapper.readValue(bscsRes.getResponse().getContentAsString(), AuthResponse.class).getToken();
+
+        mockMvc.perform(post("/api/faculty/courses/" + bca201.getId() + "/grades/calculate")
+                        .header("Authorization", "Bearer " + bscsToken))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message", containsString("not assigned to instruct course")));
+    }
 }
