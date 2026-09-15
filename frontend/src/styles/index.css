@@ -2786,3 +2786,307 @@ body {
   color: var(--text-primary);
 }
 
+/* ============================================================
+   AI ACADEMIC ADVISOR — Part 8 Styles
+   ============================================================ */
+
+/* Priority Badges */
+.badge-priority-high {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(239, 68, 68, 0.5) !important;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.badge-priority-medium {
+  background: rgba(245, 158, 11, 0.18) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(245, 158, 11, 0.45) !important;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.badge-priority-low {
+  background: rgba(16, 185, 129, 0.18) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.45) !important;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* Disclaimer Card */
+.advisor-disclaimer-card {
+  padding: 0.9rem 1.25rem;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  font-size: 0.86rem;
+  border-radius: 10px;
+}
+
+/* Recommendation Cards Grid */
+.advisor-recs-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.advisor-rec-card {
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.advisor-rec-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.rec-high {
+  border-left: 4px solid var(--color-danger);
+}
+
+.rec-medium {
+  border-left: 4px solid var(--color-warning);
+}
+
+.rec-low {
+  border-left: 4px solid var(--color-success);
+}
+
+.rec-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.rec-metric-tag {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.2rem 0.6rem;
+}
+
+.rec-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.rec-explanation {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.rec-action-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  font-size: 0.84rem;
+  color: var(--text-primary);
+  margin-top: 0.25rem;
+}
+
+.rec-action-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+/* Chat & Q&A Assistant */
+.advisor-chat-container {
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.quick-prompts-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.prompt-chip {
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  color: #c7d2fe;
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 0.3rem 0.7rem;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.prompt-chip:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.25);
+  border-color: rgba(99, 102, 241, 0.5);
+  transform: translateY(-1px);
+}
+
+.prompt-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.prompt-chip-sm {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.55rem;
+}
+
+.conversation-thread {
+  min-height: 180px;
+  max-height: 420px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0.5rem;
+}
+
+.chat-welcome-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1rem;
+  text-align: center;
+}
+
+.chat-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  max-width: 85%;
+}
+
+.msg-user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.msg-advisor {
+  align-self: flex-start;
+}
+
+.msg-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.msg-bubble {
+  background: rgba(30, 34, 53, 0.85);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.msg-user .msg-bubble {
+  background: rgba(99, 102, 241, 0.18);
+  border-color: rgba(99, 102, 241, 0.35);
+  color: var(--text-primary);
+}
+
+.msg-advisor .msg-bubble {
+  background: rgba(26, 30, 48, 0.9);
+  border-color: rgba(139, 92, 246, 0.25);
+}
+
+.msg-text {
+  color: var(--text-primary);
+}
+
+.msg-time {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-top: 0.4rem;
+  text-align: right;
+}
+
+.msg-followups {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.6rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.thinking-bubble {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.8rem 1.2rem;
+}
+
+.typing-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  animation: typingBounce 1.4s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(1) { animation-delay: 0s; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingBounce {
+  0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+.chat-input-form {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.chat-input-field {
+  flex: 1;
+}
+
+@media (max-width: 600px) {
+  .chat-message {
+    max-width: 95%;
+  }
+  .chat-input-form {
+    flex-direction: column;
+  }
+}
+

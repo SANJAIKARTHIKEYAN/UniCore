@@ -75,6 +75,9 @@ class UniCoreApplicationTests {
     @Autowired
     private com.unicore.service.MlPredictionService mlPredictionService;
 
+    @Autowired
+    private com.unicore.service.AdvisorService advisorService;
+
     @Test
     @Order(1)
     @DisplayName("1. Verify 5 Configurable Departments are Seeded and Active")
@@ -1995,5 +1998,196 @@ class UniCoreApplicationTests {
                 .andExpect(jsonPath("$.totalAnalyzed", greaterThanOrEqualTo(1)))
                 .andExpect(jsonPath("$.modelStatus", containsString("Online")))
                 .andExpect(jsonPath("$.studentPredictions", not(empty())));
+    }
+
+    @Test
+    @Order(63)
+    @DisplayName("63. AI Advisor: Student self-access to personalized academic overview")
+    void test63_StudentSelfAdvisorOverview_Endpoint() throws Exception {
+        LoginRequest studentLogin = new LoginRequest("bca.stu001@unicore.edu", "Password@123");
+        MvcResult stuRes = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(studentLogin)))
+                .andExpect(status().isOk())
+                .andReturn();
+        String studentToken = objectMapper.readValue(stuRes.getResponse().getContentAsString(), AuthResponse.class).getToken();
+
+        mockMvc.perform(get("/api/advisor/me/overview")
+                        .header("Authorization", "Bearer " + studentToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.studentName", is("Sanjai Karthikeyan")))
+                .andExpect(jsonPath("$.overallAttendancePercent", greaterThanOrEqualTo(0.0)))
+                .andExpect(jsonPath("$.recommendations", notNullValue()))
+                .andExpect(jsonPath("$.summaryHeadline", notNullValue()))
+                .andExpect(jsonPath("$.courseCount", greaterThanOrEqualTo(1)));
+    }
+
+    @Test
+    @Order(64)
+    @DisplayName("64. AI Advisor Security: Student cannot access peer's advisor summary (403 Forbidden)")
+    void test64_StudentPeerAdvisor_Forbidden() throws Exception {
+        LoginRequest studentLogin = new LoginRequest("bca.stu001@unicore.edu", "Password@123");
+        MvcResult stuRes = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(studentLogin)))
+                .andExpect(status().isOk())
+                .andReturn();
+        String studentToken = objectMapper.readValue(stuRes.getResponse().getContentAsString(), AuthResponse.class).getToken();
+
+        User peerStudent = userRepository.findByEmail("bca.stu002@unicore.edu")
+                .orElseThrow(() -> new AssertionError("Peer student bca.stu002 not found"));
+
+        mockMvc.perform(get("/api/advisor/students/" + peerStudent.getId() + "/overview")
+                        .header("Authorization", "Bearer " + studentToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @Order(65)
+    @DisplayName("65. AI Advisor: Faculty access to enrolled student advisor summary")
+    void test65_FacultyEnrolledStudentAdvisor_Access() throws Exception {
+        LoginRequest facultyLogin = new LoginRequest("bca.fac001@unicore.edu", "FacultyPass@123");
+        MvcResult facRes = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(facultyLogin)))
+                .andExpect(status().isOk())
+                .andReturn();
+        String facultyToken = objectMapper.readValue(facRes.getResponse().getContentAsString(), AuthResponse.class).getToken();
+
+        User student = userRepository.findByEmail("bca.stu001@unicore.edu").orElseThrow();
+
+        mockMvc.perform(get("/api/advisor/students/" + student.getId() + "/overview")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.studentId", is(student.getId().intValue())))
+                .andExpect(jsonPath("$.recommendations", notNullValue()));
+    }
+
+    @Test
+    @Order(66)
+    @DisplayName("66. AI Advisor Security: Faculty rejected for student not in assigned courses (403 Forbidden)")
+    void test66_FacultyUnassignedStudentAdvisor_Forbidden() throws Exception {
+        LoginRequest bscsLogin = new LoginRequest("bscs.fac001@unicore.edu", "BscsPass@123");
+        MvcResult bscsRes = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(bscsLogin)))
+                .andExpect(status().isOk())
+                .andReturn();
+        String bscsToken = objectMapper.readValue(bscsRes.getResponse().getContentAsString(), AuthResponse.class).getToken();
+
+        User bcaStudent = userRepository.findByEmail("bca.stu001@unicore.edu").orElseThrow();
+
+        mockMvc.perform(get("/api/advisor/students/" + bcaStudent.getId() + "/overview")
+                        .header("Authorization", "Bearer " + bscsToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @Order(67)
+    @DisplayName("67. AI Advisor Engine: Recommendation generation, metrics, and priority sorting")
+    void test67_AdvisorRecommendationEngine_Logic() {
+        User student = userRepository.findByEmail("bca.stu001@unicore.edu").orElseThrow();
+
+        com.unicore.dto.response.AdvisorOverviewDTO overview =
+                advisorService.generateStudentOverview(student.getId());
+
+        assertNotNull(overview);
+        assertNotNull(overview.getRecommendations());
+        assertFalse(overview.getRecommendations().isEmpty(), "Recommendations should not be empty");
+
+        // Verify priorities are strictly ordered: HIGH before MEDIUM before LOW
+        int prevRank = 0;
+        for (com.unicore.dto.response.AdvisorRecommendationDTO rec : overview.getRecommendations()) {
+            assertNotNull(rec.getTitle());
+            assertNotNull(rec.getExplanation());
+            assertNotNull(rec.getPriority());
+            assertNotNull(rec.getSupportingMetric());
+
+            int currentRank = "HIGH".equals(rec.getPriority()) ? 0 : "MEDIUM".equals(rec.getPriority()) ? 1 : 2;
+            assertTrue(currentRank >= prevRank, "Recommendations must be sorted with HIGH priority first");
+            prevRank = currentRank;
+        }
+    }
+
+    @Test
+    @Order(68)
+    @DisplayName("68. AI Advisor: Student refresh endpoint (/api/advisor/me/refresh)")
+    void test68_AdvisorRefresh_Endpoint() throws Exception {
+        LoginRequest studentLogin = new LoginRequest("bca.stu001@unicore.edu", "Password@123");
+        MvcResult stuRes = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(studentLogin)))
+                .andExpect(status().isOk())
+                .andReturn();
+        String studentToken = objectMapper.readValue(stuRes.getResponse().getContentAsString(), AuthResponse.class).getToken();
+
+        mockMvc.perform(post("/api/advisor/me/refresh")
+                        .header("Authorization", "Bearer " + studentToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.studentName", is("Sanjai Karthikeyan")))
+                .andExpect(jsonPath("$.recommendations", notNullValue()));
+    }
+
+    @Test
+    @Order(69)
+    @DisplayName("69. AI Advisor Q&A: Attendance query intent and structured response")
+    void test69_AdvisorQuestion_AttendanceInquiry() throws Exception {
+        LoginRequest studentLogin = new LoginRequest("bca.stu001@unicore.edu", "Password@123");
+        MvcResult stuRes = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(studentLogin)))
+                .andExpect(status().isOk())
+                .andReturn();
+        String studentToken = objectMapper.readValue(stuRes.getResponse().getContentAsString(), AuthResponse.class).getToken();
+
+        com.unicore.dto.request.AdvisorQuestionRequest qReq =
+                new com.unicore.dto.request.AdvisorQuestionRequest("How is my attendance standing?");
+
+        mockMvc.perform(post("/api/advisor/me/ask")
+                        .header("Authorization", "Bearer " + studentToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(qReq)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.intent", is("ATTENDANCE_INQUIRY")))
+                .andExpect(jsonPath("$.answer", containsString("attendance")))
+                .andExpect(jsonPath("$.suggestedQuestions", not(empty())));
+    }
+
+    @Test
+    @Order(70)
+    @DisplayName("70. AI Advisor Q&A: Course improvement inquiry and actionable advice")
+    void test70_AdvisorQuestion_CourseImprovementInquiry() throws Exception {
+        LoginRequest studentLogin = new LoginRequest("bca.stu001@unicore.edu", "Password@123");
+        MvcResult stuRes = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(studentLogin)))
+                .andExpect(status().isOk())
+                .andReturn();
+        String studentToken = objectMapper.readValue(stuRes.getResponse().getContentAsString(), AuthResponse.class).getToken();
+
+        com.unicore.dto.request.AdvisorQuestionRequest qReq =
+                new com.unicore.dto.request.AdvisorQuestionRequest("Which course should I focus on to improve my grades?");
+
+        mockMvc.perform(post("/api/advisor/me/ask")
+                        .header("Authorization", "Bearer " + studentToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(qReq)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.intent", is("COURSE_IMPROVEMENT_INQUIRY")))
+                .andExpect(jsonPath("$.answer", notNullValue()))
+                .andExpect(jsonPath("$.confidence", greaterThan(0.0)));
+    }
+
+    @Test
+    @Order(71)
+    @DisplayName("71. AI Advisor: Admin institutional overview endpoint (/api/advisor/admin/overview)")
+    void test71_AdminAdvisorOverview_Endpoint() throws Exception {
+        String adminToken = getAdminToken();
+
+        mockMvc.perform(get("/api/advisor/admin/overview")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalStudentsAnalyzed", greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.priorityDistributionByDepartment", notNullValue()));
     }
 }

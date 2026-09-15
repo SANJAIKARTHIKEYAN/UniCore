@@ -6,7 +6,7 @@ const NAV_ITEMS = [
   { id: 'attendance', label: 'Attendance', icon: '📅' },
   { id: 'academic', label: 'Academic Performance', icon: '📚' },
   { id: 'results', label: 'Semester Results', icon: '📝' },
-  { id: 'risk', label: 'Risk Status', icon: '🛡️' },
+  { id: 'advisor', label: 'AI Advisor', icon: '🤖' },
   { id: 'fees', label: 'Fees & Dues', icon: '💳' },
   { id: 'documents', label: 'Documents', icon: '📁' },
   { id: 'notifications', label: 'Notifications', icon: '🔔' },

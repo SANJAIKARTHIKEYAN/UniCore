@@ -220,5 +220,21 @@ export const api = {
   getCourseRisk: (courseId) => request(`/ml/courses/${courseId}/risk`),
   getFacultyRiskOverview: () => request('/ml/faculty/risk-overview'),
   getAdminRiskOverview: () => request('/ml/admin/risk-overview'),
+
+  // AI Academic Advisor (Part 8)
+  getAdvisorOverview: () => request('/advisor/me/overview'),
+  getAdvisorRecommendations: () => request('/advisor/me/recommendations'),
+  refreshAdvisor: () =>
+    request('/advisor/me/refresh', {
+      method: 'POST',
+    }),
+  askAdvisor: (question) =>
+    request('/advisor/me/ask', {
+      method: 'POST',
+      body: JSON.stringify({ question }),
+    }),
+  getStudentAdvisorOverview: (studentId) => request(`/advisor/students/${studentId}/overview`),
+  getAdminAdvisorOverview: () => request('/advisor/admin/overview'),
 };
+
 

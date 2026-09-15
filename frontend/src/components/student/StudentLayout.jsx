@@ -5,7 +5,7 @@ import StudentProfile from '../../pages/student/StudentProfile';
 import StudentAttendance from '../../pages/student/StudentAttendance';
 import StudentAcademicPerformance from '../../pages/student/StudentAcademicPerformance';
 import StudentResults from '../../pages/student/StudentResults';
-import StudentRiskStatus from '../../pages/student/StudentRiskStatus';
+import StudentAdvisor from '../../pages/student/StudentAdvisor';
 import StudentFees from '../../pages/student/StudentFees';
 import StudentDocuments from '../../pages/student/StudentDocuments';
 import StudentNotifications from '../../pages/student/StudentNotifications';
@@ -25,8 +25,9 @@ export default function StudentLayout({ currentUser, onLogout }) {
         return <StudentAcademicPerformance />;
       case 'results':
         return <StudentResults />;
+      case 'advisor':
       case 'risk':
-        return <StudentRiskStatus />;
+        return <StudentAdvisor />;
       case 'fees':
         return <StudentFees />;
       case 'documents':
